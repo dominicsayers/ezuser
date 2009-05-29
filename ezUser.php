@@ -1,24 +1,55 @@
 <?php
+/*
+--------------------------------------------------------------------------------
+ezUser - adds user registration and authentication to a website
+--------------------------------------------------------------------------------
+
+This code has three principle design goals:
+
+	1. To make it easy for people to register and sign in to your site.
+	2. To make it easy for you to add this functionality to your site.
+	3. To make it easy for you to administer the user database on your site
+
+Other design goals, such as run-time efficiency, are important but
+secondary to these.
+
+--------------------------------------------------------------------------------
+
+Copyright (c) 2008-2009, Dominic Sayers
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+ * Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+ * Neither the name of Dominic Sayers nor the names of its contributors may be
+   used to endorse or promote products derived from this software without
+   specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+--------------------------------------------------------------------------------
+*/
 /**
- * ezUser - adds user registration and authentication to a website
- *
- * This code has three principle design goals:
- *
- * 	1. To make it easy for people to register and sign in to your site.
- * 	2. To make it easy for you to add this functionality to your site.
- * 	3. To make it easy for you to administer the user database on your site
- *
- * Other design goals, such as run-time efficiency, are important but
- * secondary to these.
- *
  * @package	ezUser
  * @author	Dominic Sayers <dominic_sayers@hotmail.com>
  * @copyright	2009 Dominic Sayers
- * @license	http://www.opensource.org/licenses/cpal_1.0 Common Public Attribution License Version 1.0 (CPAL) license
+ * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	(development code)
+ * @version	0.15 - Now released under the BSD license
  */
-
 /*.
 	require_module 'standard';
 	require_module 'spl';
@@ -28,23 +59,20 @@
 	require_module 'session';
 .*/
 
-$ezUser_verbose = true;	// Set to true to see detailed status codes
+$ezUser_verbose = true;		// Set to true to see detailed status codes
 
-// Code for release package is inserted here
+/* Comment out profiling statements if not needed
+function ezUser_time() {list($usec, $sec) = explode(" ",microtime()); return ((float)$usec + (float)$sec);}
+$ezUser_profile			= array();
+$ezUser_profile['REQUEST_TIME']	= $_SERVER['REQUEST_TIME'];
+$ezUser_profile['received']	= ezUser_time();
+*/
 
 // ---------------------------------------------------------------------------
 // 		ezUserAPI
 // ---------------------------------------------------------------------------
 // ezUser REST interface & other constants
 // ---------------------------------------------------------------------------
-/**
- * @package	ezUser
- * @author	Dominic Sayers <dominic_sayers@hotmail.com>
- * @copyright	2009 Dominic Sayers
- * @license	http://www.opensource.org/licenses/cpal_1.0 Common Public Attribution License Version 1.0 (CPAL) license
- * @link	http://www.dominicsayers.com
- * @version	0.12 - Local validation improved
- */
 interface ezUserAPI {
 	const	PACKAGE			= 'ezUser',
 
@@ -65,8 +93,8 @@ interface ezUserAPI {
 		ACTION_SIGNIN		= 'signin',
 		ACTION_SIGNOUT		= 'signout',
 		ACTION_STATUSTEXT	= 'statustext',
-		ACTION_VALIDATE		= 'validate',		// Validate registration form details
-		ACTION_VERIFY		= 'verify',		// Verify verification email
+		ACTION_VALIDATE		= 'validate',	// Validate registration form details
+		ACTION_VERIFY		= 'verify',	// Verify verification email
 
 		// Keys for the user data array members
 		TAGNAME_ID		= 'id',
@@ -87,9 +115,9 @@ interface ezUserAPI {
 		SETTINGS_ADMINEMAIL	= 'adminEmail',
 
 		// Cookie names
-		EZUSER_COOKIE_USERNAME	= 'ezUser1',
-		EZUSER_COOKIE_PASSWORD	= 'ezUser2',
-		EZUSER_COOKIE_AUTOSIGN	= 'ezUser3',
+		COOKIE_USERNAME		= 'ezUser1',
+		COOKIE_PASSWORD		= 'ezUser2',
+		COOKIE_AUTOSIGN		= 'ezUser3',
 
 		// Miscellaneous constants
 		EMAIL_DELIMITER		= '@',
@@ -134,14 +162,6 @@ interface ezUserAPI {
 // ---------------------------------------------------------------------------
 // Field validation functions for ezUser
 // ---------------------------------------------------------------------------
-/**
- * @package	ezUser
- * @author	Dominic Sayers <dominic_sayers@hotmail.com>
- * @copyright	2009 Dominic Sayers
- * @license	http://www.opensource.org/licenses/cpal_1.0 Common Public Attribution License Version 1.0 (CPAL) license
- * @link	http://www.dominicsayers.com
- * @version	0.12 - Local validation improved
- */
 class ezUserValidate {
 	public static /*.boolean.*/ function is_email(/*.string.*/ $email, $checkDNS = false) {
 		// Check that $email is a valid address. Read the following RFCs to understand the constraints:
@@ -497,14 +517,6 @@ class ezUserValidate {
 // with a user. It has no knowledge of how user information is persisted - see
 // the ezUsers class for that.
 // ---------------------------------------------------------------------------
-/**
- * @package	ezUser
- * @author	Dominic Sayers <dominic_sayers@hotmail.com>
- * @copyright	2009 Dominic Sayers
- * @license	http://www.opensource.org/licenses/cpal_1.0 Common Public Attribution License Version 1.0 (CPAL) license
- * @link	http://www.dominicsayers.com
- * @version	0.12 - Local validation improved
- */
 class ezUser extends ezUserValidate implements ezUserAPI, Iterator {
 	// User data
 	private		$values			= /*.(array[string]string).*/ array();
@@ -592,12 +604,6 @@ class ezUser extends ezUserValidate implements ezUserAPI, Iterator {
 			return false;
 		}
 	}
-
-//	protected /*.int.*/ function setID(/*.string.*/ $id) {
-//		if ($id === '') return self::RESULT_NOID;
-//		$this->changeValue(self::TAGNAME_ID, $id);
-//		return self::RESULT_VALIDATED;
-//	}
 
 	protected /*.int.*/ function setPasswordHash(/*.string.*/ $passwordHash) {
 		if ($passwordHash === '')				return self::RESULT_NOPASSWORD;
@@ -698,14 +704,6 @@ class ezUser extends ezUserValidate implements ezUserAPI, Iterator {
 // of stored users. It interacts with the storage mechanism (e.g. database or
 // XML file).
 // ---------------------------------------------------------------------------
-/**
- * @package	ezUser
- * @author	Dominic Sayers <dominic_sayers@hotmail.com>
- * @copyright	2009 Dominic Sayers
- * @license	http://www.opensource.org/licenses/cpal_1.0 Common Public Attribution License Version 1.0 (CPAL) license
- * @link	http://www.dominicsayers.com
- * @version	0.12 - Local validation improved
- */
 class ezUsers extends ezUser {
 	/*.private.*/ const STORAGE = '.ezuser-data.php';
 
@@ -767,7 +765,7 @@ HTML;
 			// Populate $ezUser from stored data
 			$nodeList = $node->parentNode->childNodes;
 
-			// We could make this quicker and possibly more secure by storing the username and email
+			// To do: we could make this quicker and possibly more secure by storing the username and email
 			// in their own tags to allow for duplicate searching as above, but storing the other fields
 			// in some internal format (serialized?) to allow us to pass the whole lot to C_ezUser
 			// en masse. This would remove the need to expose the ability to this class to set the id property.
@@ -782,12 +780,10 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private static /*.int.*/ function is_duplicate(/*.string.*/ $username, /*.string.*/ $email, /*.string.*/ $id) {
-//if ($email === 'dominic_sayers2@hotmail.com') echo "<pre>username: $username | email: $email | id: $id</pre>\n"; // debug
 		// Username must be unique
 		$ezUser = self::lookup($username);
 
 		if ($ezUser->status() !== self::STATUS_UNKNOWN) {
-//if ($email === 'dominic_sayers2@hotmail.com') echo "<pre>id: {$ezUser->id()} | status: {$ezUser->status()}</pre>\n"; // debug
 			if ($ezUser->id() !== $id) return self::RESULT_USERNAMEEXISTS;
 		}
 
@@ -795,7 +791,6 @@ HTML;
 		$ezUser = self::lookup($email);
 
 		if ($ezUser->status() !== self::STATUS_UNKNOWN) {
-//if ($email === 'dominic_sayers2@hotmail.com') echo "<pre>id: {$ezUser->id()} | status: {$ezUser->status()}</pre>\n"; // debug
 			if ($ezUser->id() !== $id) return self::RESULT_EMAILEXISTS;
 		}
 
@@ -829,8 +824,8 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	public static /*.ezUser.*/ function doSignIn(/*.array[string]mixed.*/ $userData) {
-		$username	= (string) $userData[self::EZUSER_COOKIE_USERNAME];
-		$password	= (string) $userData[self::EZUSER_COOKIE_PASSWORD];
+		$username	= (string) $userData[self::COOKIE_USERNAME];
+		$password	= (string) $userData[self::COOKIE_PASSWORD];
 		$ezUser		= self::lookup($username);
 
 		if ($ezUser->status() === self::STATUS_UNKNOWN) {
@@ -850,13 +845,10 @@ HTML;
 	public static /*.int.*/ function validate(/*.array[string]mixed.*/ $userData, /*.ezUser.*/ &$ezUser) {
 		$result		= self::RESULT_VALIDATED;
 
-//if ($userData[self::TAGNAME_EMAIL] === 'dominic_sayers2@hotmail.com') echo "<pre>new: {$userData[self::TAGNAME_NEW]}</pre>\n"; // debug
 		if ((bool) $userData[self::TAGNAME_NEW]) {
-//if ($userData[self::TAGNAME_EMAIL] === 'dominic_sayers2@hotmail.com') echo "<pre>It's true</pre>\n"; // debug
 			$id	= '';
 			$ezUser	= new ezUser();
 		} else {
-//if ($userData[self::TAGNAME_EMAIL] === 'dominic_sayers2@hotmail.com') echo "<pre>It's false</pre>\n"; // debug
 			$id	= $ezUser->id();
 			$ezUser->clearErrors();
 		}
@@ -864,8 +856,8 @@ HTML;
 		$ezUser->setFirstName(	(string) $userData[self::TAGNAME_FIRSTNAME]);
 		$ezUser->setLastName(	(string) $userData[self::TAGNAME_LASTNAME]);
 		$email		=	(string) $userData[self::TAGNAME_EMAIL];
-		$username	=	(string) $userData[self::EZUSER_COOKIE_USERNAME];
-		$passwordHash	=	(string) $userData[self::EZUSER_COOKIE_PASSWORD];
+		$username	=	(string) $userData[self::COOKIE_USERNAME];
+		$passwordHash	=	(string) $userData[self::COOKIE_PASSWORD];
 
 		$thisResult 	= $ezUser->setEmail		($email);		if ($thisResult !== self::RESULT_VALIDATED) $result = $thisResult;
 		$thisResult 	= $ezUser->setUsername		($username);		if ($thisResult !== self::RESULT_VALIDATED) $result = $thisResult;
@@ -898,14 +890,6 @@ HTML;
 //
 // Assumes $_SESSION[self::PACKAGE] exists
 // ---------------------------------------------------------------------------
-/**
- * @package	ezUser
- * @author	Dominic Sayers <dominic_sayers@hotmail.com>
- * @copyright	2009 Dominic Sayers
- * @license	http://www.opensource.org/licenses/cpal_1.0 Common Public Attribution License Version 1.0 (CPAL) license
- * @link	http://www.dominicsayers.com
- * @version	0.12 - Local validation improved
- */
 class ezUserUI extends ezUsers implements ezUserAPI {
 	/*.private.*/ const	PARAM_PERSISTED		= 'getPersisted',
 				PARAM_EMPTY		= 'empty',
@@ -1001,7 +985,8 @@ class ezUserUI extends ezUsers implements ezUserAPI {
 		if (!headers_sent()) {
 			$package 	= self::PACKAGE;
 
-			$defaultType	= ($component	=== 'container')	? "text/html"	: "application/$package"; // Webkit oddity
+//			$defaultType	= ($component	=== 'container')	? 'text/html'	: "application/$package"; // Webkit oddity
+			$defaultType	= 'text/html';
 			$contentType	= ($contentType	=== '')			? $defaultType	: $contentType;
 			$component	= ($component	=== $package)		? $package	: "$package-$component";
 
@@ -1012,6 +997,33 @@ class ezUserUI extends ezUsers implements ezUserAPI {
 
 		// Send content
 		echo $content;
+
+/* Comment out profiling statements if not needed
+		// Send profiling data as a comment
+		global $ezUser_profile;
+		
+		if (count($ezUser_profile) > 0) {
+			$ezUser_profile['response'] = ezUser_time();
+
+			if ($contentType === 'text/javascript' || $contentType === 'text/css') {
+				$commentStart	= '/*';
+				$commentEnd	= '*' . '/';
+			} else {
+				$commentStart	= '<!--';
+				$commentEnd	= '-->';
+			}
+
+			echo "\n$commentStart\n";
+			$previous = reset($ezUser_profile);
+
+			while (list($key, $value) = each($ezUser_profile)) {
+				$elapsed	= round($value - $previous, 4);
+				$previous	= $value;
+				echo "$key\t$value\t$elapsed\n";
+			}
+			echo "$commentEnd\n";
+		}
+*/
 	}
 
 	private static /*.string.*/ function htmlInputText() {
@@ -1193,6 +1205,11 @@ HTML;
 		// 		therefore need to be populated with the attempted registration
 		// 		details.
 
+/* Comment out profiling statements if not needed
+		global $ezUser_profile;
+		$ezUser_profile[self::ACTION_ACCOUNT . '-start'] = ezUser_time();
+*/
+
 		$package		= self::PACKAGE;
 		$action			= self::ACTION_ACCOUNT;
 		$instance		= self::getInstanceID($action);
@@ -1210,6 +1227,7 @@ HTML;
 		$htmlInputText		= self::htmlInputText();
 		$message		= self::htmlMessage('* = mandatory field', self::MESSAGE_STYLE_PLAIN, $instance);
 		$resendButton		= '';
+
 		$ezUser			=& self::getSessionObject($action);
 		$result			= $ezUser->result();
 
@@ -1289,7 +1307,7 @@ HTML;
 		// so we can clear the result field
 		$ezUser->setResult(self::RESULT_UNDEFINED);
 
-		return <<<HTML
+		$html = <<<HTML
 		<form class="$package-form" onsubmit="return false">
 			<fieldset class="$package-fieldset">
 				<input id= "$instance-$tagEmail"
@@ -1349,6 +1367,12 @@ $text$resendButton
 			</fieldset>
 		</form>
 HTML;
+
+/* Comment out profiling statements if not needed
+		$ezUser_profile[self::ACTION_ACCOUNT . '-end'] = ezUser_time();
+*/
+
+		return $html;
 	}
 
 	public static /*.void.*/ function getAccountForm(/*.string.*/ $mode, $newFlag = false) {
@@ -1510,13 +1534,13 @@ HTML;
 		$instance	= self::getInstanceId(self::ACTION_ACCOUNT);
 
 		$css = <<<CSS
-/**
+﻿/**
  * @package	ezUser
  * @author	Dominic Sayers <dominic_sayers@hotmail.com>
  * @copyright	2009 Dominic Sayers
- * @license	http://www.opensource.org/licenses/cpal_1.0 Common Public Attribution License Version 1.0 (CPAL) license
- * @link	http://www.dominicsayers.com
- * @version	0.12 - Local validation improved
+ * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
+ * @link	http://code.google.com/p/ezuser/
+ * @version	0.15 - Now released under the BSD license
  */
 @charset "UTF-8";
 
@@ -1549,12 +1573,12 @@ div.$package-message {
 
 div.$package-text {
 	width:286px;
-	height:48px;
+/*	height:48px; */
 	float:left;
 	padding:0;
 	text-align:justify;
 /*	visibility:hidden; */
-	margin-top:7px;
+	margin:7px 0 7px 0;
 	line-height:16px;
 }
 
@@ -1632,9 +1656,9 @@ CSS;
 		$URL			= self::thisURL();
 		$folder			= dirname($URL);
 
-		$cookieUsername		= self::EZUSER_COOKIE_USERNAME;
-		$cookiePassword		= self::EZUSER_COOKIE_PASSWORD;
-		$cookieStaySignedIn	= self::EZUSER_COOKIE_AUTOSIGN;
+		$cookieUsername		= self::COOKIE_USERNAME;
+		$cookiePassword		= self::COOKIE_PASSWORD;
+		$cookieStaySignedIn	= self::COOKIE_AUTOSIGN;
 
 		$tagFirstName		= self::TAGNAME_FIRSTNAME;
 		$tagLastName		= self::TAGNAME_LASTNAME;
@@ -1666,9 +1690,9 @@ CSS;
  * @package	ezUser
  * @author	Dominic Sayers <dominic_sayers@hotmail.com>
  * @copyright	2009 Dominic Sayers
- * @license	http://www.opensource.org/licenses/cpal_1.0 Common Public Attribution License Version 1.0 (CPAL) license
- * @link	http://www.dominicsayers.com
- * @version	0.12 - Local validation improved
+ * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
+ * @link	http://code.google.com/p/ezuser/
+ * @version	0.15 - Now released under the BSD license
  */
 /*global window, document, event, ActiveXObject */ // For JSLint
 'use strict';
@@ -2385,8 +2409,9 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private	static /*.string.*/ function htmlAbout() {
+		$package = self::PACKAGE;
 		$matches = /*.(array[int][int]string).*/ array();
-		preg_match_all("!(?<=^ \\* @)(?:.)+(?=$)!m", file_get_contents(__FILE__, 0, NULL, -1, 1024), $matches);
+		preg_match_all("!(?<=^ \\* @)(?:.)+(?=$)!m", file_get_contents("$package.php", 0, NULL, -1, 4096), $matches);
 		$html = "<pre>\n";
 		foreach ($matches[0] as $match) {$html .= "    " . htmlspecialchars($match) . "\n";}
 		$html .= "<hr />\n";
@@ -2454,7 +2479,7 @@ if (!function_exists('__autoload')) {/*.void.*/ function __autoload(/*.string.*/
 // ---------------------------------------------------------------------------
 // 		ezUser.php
 // ---------------------------------------------------------------------------
-// Some code to make this all automagic and a bit RESTful
+// Some code to make this all automagic
 // If you want more control over how ezUser works then you might need to amend
 // or even remove the code below here
 
@@ -2474,9 +2499,9 @@ if (basename($_SERVER['PHP_SELF']) === basename(__FILE__)) {
 
 	// Attempt auto-signin?
 	if (!$ezUser->authenticated()) {
-		if (isset($_COOKIE[ezUser::EZUSER_COOKIE_AUTOSIGN]) && ($_COOKIE[ezUser::EZUSER_COOKIE_AUTOSIGN] === 'true')) {
-			$user[ezUser::EZUSER_COOKIE_USERNAME] = (string) $_COOKIE[ezUser::EZUSER_COOKIE_USERNAME];
-			$user[ezUser::EZUSER_COOKIE_PASSWORD] = hash(ezUser::HASH_FUNCTION, (string) $_COOKIE[ini_get('session.name')] . (string) $_COOKIE[ezUser::EZUSER_COOKIE_PASSWORD]);
+		if (isset($_COOKIE[ezUser::COOKIE_AUTOSIGN]) && ($_COOKIE[ezUser::COOKIE_AUTOSIGN] === 'true')) {
+			$user[ezUser::COOKIE_USERNAME] = (string) $_COOKIE[ezUser::COOKIE_USERNAME];
+			$user[ezUser::COOKIE_PASSWORD] = hash(ezUser::HASH_FUNCTION, (string) $_COOKIE[ini_get('session.name')] . (string) $_COOKIE[ezUser::COOKIE_PASSWORD]);
 			$ezUser = ezUsers::doSignIn($user);
 		}
 	}
