@@ -9,7 +9,7 @@
 <body>
 <?php
 	require_once '../ezUser.php';
-	ezUserUI::getContainer('account=new');
+	ezUserUI::getContainer('account');
 ?>
 </body>
 

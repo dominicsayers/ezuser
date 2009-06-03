@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * @copyright	2009 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.15 - Now released under the BSD license
+ * @version	0.16 - Can edit existing account (at last)
  */
 /*.
 	require_module 'standard';
@@ -152,7 +152,14 @@ interface ezUserAPI {
 		RESULT_RESULTNAN	= 40,
 		RESULT_CONFIGNOTARRAY	= 41,
 		RESULT_USERNAMEEXISTS	= 42,
-		RESULT_EMAILEXISTS	= 43;
+		RESULT_EMAILEXISTS	= 43,
+
+		// Modes for account page
+		ACCOUNT_MODE_NEW	= 'new',
+		ACCOUNT_MODE_EDIT	= 'edit',
+		ACCOUNT_MODE_DISPLAY	= 'display',
+		ACCOUNT_MODE_RESULT	= 'result',
+		ACCOUNT_MODE_CANCEL	= 'cancel';
 }
 // End of interface ezUserAPI
 //+C_ezUserAPI+
@@ -1037,27 +1044,20 @@ class ezUserUI extends ezUsers implements ezUserAPI {
 HTML;
 	}
 
-	private static /*.string.*/ function htmlButtonEvents() {
+	private static /*.string.*/ function htmlButton(/*.string.*/ $type, $verbose = false) {
 		$package 	= self::PACKAGE;
+		$classVerbose	= ($verbose) ? " $package-preference-verbose" : "";
 		$setButtonState	= $package . "_setButtonState";
 		$onClick	= $package . "_click";
 
 		return <<<HTML
+					type		=	"button"
+					class		=	"$package-button $package-$type$classVerbose $package-buttonstate-0"
 					onclick		=	"$onClick(this)"
 					onmouseover	=	"$setButtonState(this, 1, true)"
 					onmouseout	=	"$setButtonState(this, 1, false)"
 					onfocus		=	"$setButtonState(this, 2, true)"
 					onblur		=	"$setButtonState(this, 2, false)"
-HTML;
-	}
-
-	private static /*.string.*/ function htmlButton(/*.string.*/ $type, $verbose = false) {
-		$package 	= self::PACKAGE;
-		$classVerbose	= ($verbose) ? " $package-preference-verbose" : "";
-
-		return <<<HTML
-					type		=	"button"
-					class		=	"$package-button $package-$type$classVerbose $package-buttonstate-0"
 HTML;
 	}
 
@@ -1144,7 +1144,6 @@ HTML;
 	private static /*.string.*/ function htmlResultForm (/*.int.*/ $result) {
 		$package		= self::PACKAGE;
 		$htmlButtonPreference	= self::htmlButton("preference");
-		$htmlButtonEvents	= self::htmlButtonEvents();
 		$message		= self::htmlMessage(self::resultText($result));
 		$onClick		= $package . "_click";
 
@@ -1155,7 +1154,6 @@ $message
 				<input id="$package-OK" value="OK"
 					tabindex	=	"3231"
 $htmlButtonPreference
-$htmlButtonEvents
 				/>
 			</fieldset>
 		</form>
@@ -1173,37 +1171,57 @@ HTML;
 	}
 
 // ---------------------------------------------------------------------------
-	private static /*.string.*/ function htmlAccountForm(/*.string.*/ $mode, $newFlag = false) {
-		// This function is driven by the mode parameter as follows:
-		//
-		// Mode		Behaviour
-		// -------	------------------------------------------------------------
-		// new		Register a new user. Input controls are blank but available.
-		// 		Button says Register.
-		//
-		// edit		Edit an existing account or correct a failed registration.
-		// 		Input controls are populated with existing data. Buttons
-		// 		say OK and Cancel
-		//
-		// display	View account details. Input controls are populated but
-		// 		unavailable. Button says Edit.
-		//
-		// result	Infer actual mode from result of validation. If validated
-		// 		then display account details, otherwise allow them to be
-		// 		corrected. Inferred mode will be either 'display' or 'edit'.
+	private static /*.string.*/ function htmlAccountForm($mode = '', $newFlag = false) {
+	// $newFlag indicates whether this is an existing user from the
+	// database, or a new registration that we are processing. If the user
+	// enters invalid data we might render this form a number of times
+	// until validation is successful. $newFlag should persist until
+	// registration is successful.
 
-		// $newFlag indicates whether this is an existing user from the database, or a new
-		// registration that we are processing. If the user enters invalid data
-		// we might render this form a number of times until validation is successful.
+	// This function is also driven by the mode parameter as follows:
+	//
+	// Mode		Behaviour
+	// -------	----------------------------------------------
+	// (none)	Infer mode from current ezUser object - if
+	//		it's authenticated then display the account
+	//		page for that user. If not then display a
+	//		registration form for a new user. Inferred
+	//		mode will be 'display' or 'new'
 
-		// So, the difference between $mode = 'new' and $newFlag = true is as follows:
-		//
-		// 	$mode = 'new' means this is a blank form for a new registration
-		//
-		// 	$newFlag = true means we are processing a new registration but we might
-		// 		be asking the user to re-enter certain values: the form might
-		// 		therefore need to be populated with the attempted registration
-		// 		details.
+	// new		Register a new user. Input controls are blank
+	// 		but available. Button says Register.
+	//
+	// display	View account details. Input controls are
+	//		populated but unavailable. Button says Edit.
+	//
+	// edit		Edit an existing account or correct a failed
+	//		registration. Input controls are populated
+	//		with existing data. Buttons say OK and Cancel
+	//
+	// result	Infer actual mode from result of validation.
+	//		If validated then display account details,
+	//		otherwise allow them to be corrected.
+	//		Inferred mode will be either 'display' or
+	//		'edit'.
+	//
+	// cancel	Infer actual mode from $newFlag. If we're
+	//		cancelling a new registration then clear the
+	//		form. If we're cancelling editing an existing
+	//		user then redisplay details from the database.
+	//		Inferred mode will be either 'new' or
+	//		'display'.
+
+	// So, the difference between $mode = 'new' and $newFlag = true is as
+	// follows:
+	//
+	// 	$mode = 'new'	means this is a blank form for a new
+	//			registration
+	//
+	// 	$newFlag = true	means we are processing a new registration but
+	//			we might be asking the user to re-enter
+	//			certain values: the form might therefore need
+	//			to be populated with the attempted
+	//			registration details.
 
 /* Comment out profiling statements if not needed
 		global $ezUser_profile;
@@ -1223,19 +1241,35 @@ HTML;
 		$tagNew			= self::TAGNAME_NEW;
 
 		$htmlButtonAction	= self::htmlButton('action');
-		$htmlButtonEvents	= self::htmlButtonEvents();
 		$htmlInputText		= self::htmlInputText();
-		$message		= self::htmlMessage('* = mandatory field', self::MESSAGE_STYLE_PLAIN, $instance);
+		$htmlOtherButton	= '';
 		$resendButton		= '';
+		$disabled		= '';
+		$message		= self::htmlMessage('* = mandatory field', self::MESSAGE_STYLE_PLAIN, $instance);
 
-		$ezUser			=& self::getSessionObject($action);
-		$result			= $ezUser->result();
+		if (!isset($mode) || empty($mode)) $mode = '';
 
-		if ($mode === 'result') $mode = ($result === self::RESULT_VALIDATED) ? 'display' : 'edit';
+		if ($mode === '') {
+			$ezUser			=& self::getSessionObject();
+			$result			= self::RESULT_VALIDATED;
+		} else {
+			$ezUser			=& self::getSessionObject($action);
+			$result			= $ezUser->result();
+		}
+
+		if ($mode === 'cancel') $ezUser->clearErrors();
+
+		// Some raw logic - think about these lines before amending
+		if (!isset($newFlag))	$newFlag	= false;
+		if ($mode === '')	$mode		= ($ezUser->authenticated())		? 'display'	: 'new';
+		if ($mode === 'new')	$newFlag	= true;
+		if ($mode === 'cancel') $mode		= ($newFlag)				? 'new'		: 'display';
+		if ($mode === 'result') $mode		= ($result === self::RESULT_VALIDATED)	? 'display'	: 'edit';
+
+		$newValue = ($newFlag) ? self::STRING_TRUE : self::STRING_FALSE;
 
 		// Specific stuff for new user mode
 		if ($mode === 'new') {
-			$newFlag	= true;
 			$text		= self::htmlMessage('', self::MESSAGE_STYLE_TEXT, $instance, self::MESSAGE_TYPE_TEXT);
 
 			$buttonID	= 'validate';
@@ -1247,8 +1281,6 @@ HTML;
 			$username	= '';
 			$password	= '';
 		} else {
-			if (!isset($newFlag)) $newFlag = false;
-
 			$errors		= $ezUser->errors();
 			$email		= (isset($errors[self::TAGNAME_EMAIL]))		? $errors[self::TAGNAME_EMAIL]		: $ezUser->email();
 			$firstName	= (isset($errors[self::TAGNAME_FIRSTNAME]))	? $errors[self::TAGNAME_FIRSTNAME]	: $ezUser->firstName();
@@ -1266,7 +1298,6 @@ HTML;
 				<input id="$instance-resend" value="Resend"
 					tabindex	=	"3219"
 $htmlButtonAction
-$htmlButtonEvents
 				/>
 HTML;
 			} else {
@@ -1274,33 +1305,35 @@ HTML;
 				$text	= self::resultDescription($result);
 				$text	= self::htmlMessage($text, self::MESSAGE_STYLE_FAIL, $instance, self::MESSAGE_TYPE_TEXT);
 			}
-		}
 
-		// Specific stuff for display mode
-		if ($mode === 'display') {
-			$buttonID	= 'edit';
-			$buttonText	= 'Edit';
-			$disabled	= "\t\t\t\t\tdisabled\t=\t\"disabled\"\r\n";
-			$newValue	= self::STRING_FALSE;
-		} else {
-			$disabled	= '';
-			$newValue	= ($newFlag) ? self::STRING_TRUE : self::STRING_FALSE;
-		}
+			switch ($mode) {
+			case 'display':
+				$buttonID	= 'edit';
+				$buttonText	= 'Edit';
+				$disabled	= "\t\t\t\t\tdisabled\t=\t\"disabled\"\r\n";
+				$newValue	= self::STRING_FALSE;
 
-		// Specific stuff for edit mode
-		if ($mode === 'edit') {
-			$buttonID	= 'validate';
-			$buttonText	= 'OK';
+				$htmlOtherButton = <<<HTML
+				<input id="$instance-register" value="New"
+					tabindex	=	"3218"
+$htmlButtonAction
+				/>
 
-			$htmlCancelButton = <<<HTML
+HTML;
+				break;
+			case 'edit':
+				$buttonID	= 'validate';
+				$buttonText	= 'OK';
+
+				$htmlOtherButton = <<<HTML
 				<input id="$instance-cancel" value="Cancel"
 					tabindex	=	"3218"
 $htmlButtonAction
-$htmlButtonEvents
 				/>
+
 HTML;
-		} else {
-			$htmlCancelButton = '';
+				break;
+			}
 		}
 
 		// At this point we have finished with the result of any prior validation
@@ -1358,9 +1391,8 @@ $message
 				<input id="$instance-$buttonID" value="$buttonText"
 					tabindex	=	"3217"
 $htmlButtonAction
-$htmlButtonEvents
 				/>
-$htmlCancelButton			</fieldset>
+$htmlOtherButton			</fieldset>
 			<fieldset class="$package-fieldset">
 $text$resendButton
 				<input id="$instance-$tagNew" type="hidden" value="$newValue" />
@@ -1384,7 +1416,6 @@ HTML;
 	private static /*.string.*/ function htmlDashboard() {
 		$package		= self::PACKAGE;
 		$htmlButtonPreference	= self::htmlButton("preference");
-		$htmlButtonEvents	= self::htmlButtonEvents();
 		$message		= self::htmlMessage();
 		$ezUser			=& /*.(ezUser).*/ $_SESSION[$package];
 		$fullName		= $ezUser->fullName();
@@ -1395,12 +1426,10 @@ HTML;
 				<input id="$package-signOut" value="Sign out"
 					tabindex	=	"3222"
 $htmlButtonPreference
-$htmlButtonEvents
 				/>
 				<input id="$package-goaccount" value="My account"
 					tabindex	=	"3221"
 $htmlButtonPreference
-$htmlButtonEvents
 				/>
 				<div id="$package-fullName"
 					class="$package-fullName">$fullName</div>
@@ -1426,7 +1455,6 @@ HTML;
 		$tagPassword		= self::TAGNAME_PASSWORD;
 		$htmlButtonAction	= self::htmlButton('action');
 		$htmlButtonPreference	= self::htmlButton('preference');
-		$htmlButtonEvents	= self::htmlButtonEvents();
 		$htmlInputText		= self::htmlInputText();
 		$ezUser 		=& /*.(ezUser).*/ $_SESSION[$package];
 		$result			= $ezUser->result();
@@ -1444,7 +1472,6 @@ HTML;
 				$verbose = <<<HTML
 				<input id="$package-verbose" value="$result"
 $verbose
-$htmlButtonEvents
 				/>
 HTML;
 			} else {
@@ -1478,29 +1505,24 @@ $message
 				<input id="$package-signIn" value="Sign in"
 					tabindex	=	"3204"
 $htmlButtonAction
-$htmlButtonEvents
 				/>
 				<input id="$package-goaccount" value="Register"
 					tabindex	=	"3203"
 $htmlButtonAction
-$htmlButtonEvents
 				/>
 			</fieldset>
 			<fieldset class="$package-fieldset">
 				<input id="$package-staySignedIn"	value="Stay signed in"
 					tabindex	=	"3207"
 $htmlButtonPreference
-$htmlButtonEvents
 				/>
 				<input id="$package-rememberMe" value="Remember me"
 					tabindex	=	"3206"
 $htmlButtonPreference
-$htmlButtonEvents
 				/>
 				<input id="$package-reminder" value="Reset password"
 					tabindex	=	"3205"
 $htmlButtonPreference
-$htmlButtonEvents
 				/>
 			</fieldset>
 		</form>
@@ -1540,7 +1562,7 @@ HTML;
  * @copyright	2009 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.15 - Now released under the BSD license
+ * @version	0.16 - Can edit existing account (at last)
  */
 @charset "UTF-8";
 
@@ -1679,7 +1701,6 @@ CSS;
 		$actionCSS		= self::ACTION_CSS;
 		$actionResultForm	= self::ACTION_RESULTFORM;
 		$actionResend		= self::ACTION_RESEND;
-		$actionEdit		= self::ACTION_ACCOUNT . '=edit';
 
 		$accountPage		= self::getSetting(self::SETTINGS_ACCOUNTPAGE);
 		$accountClick		= ($accountPage === '') ? $package . "_ajax[0].execute('$actionAccountInPanel')" : "window.location = '$folder/$accountPage'";
@@ -1692,7 +1713,7 @@ CSS;
  * @copyright	2009 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.15 - Now released under the BSD license
+ * @version	0.16 - Can edit existing account (at last)
  */
 /*global window, document, event, ActiveXObject */ // For JSLint
 'use strict';
@@ -1988,8 +2009,8 @@ function C_ezUser() {
 			subClass	= (fail) ? 'fail' : 'info',
 			p;
 
-		if (div === null) {return;} // No such control
-		if (div.hasChildNodes()) {div.removeChild(div.firstChild);}
+		if (div === null)		return; // No such control
+		if (div.hasChildNodes())	div.removeChild(div.firstChild);
 
 		if (message !== '') {
 			p		= document.createElement('p');
@@ -2076,6 +2097,7 @@ function C_ezUser() {
 		username		= username.replace(regex, '');
 		control			= document.getElementById('$instance-$tagUsername');
 		control.defaultValue	= username;
+		control.value		= username;
 	};
 
 // ---------------------------------------------------------------------------
@@ -2291,7 +2313,13 @@ function ezUser_click(control) {
 
 		break;
 	case '$instance-edit':
-		ezUser_ajax[0].execute('$actionEdit');
+		ezUser_ajax[0].execute('$actionAccount=edit');
+		break;
+	case '$instance-register':
+		ezUser_ajax[0].execute('$actionAccount=new');
+		break;
+	case '$instance-cancel':
+		ezUser_ajax[0].execute('$actionAccount=cancel');
 		break;
 	case '$instance-resend':
 		ezUser_ajax[0].execute('$actionResend');
@@ -2387,11 +2415,13 @@ JAVASCRIPT;
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlContainer($action = self::ACTION_MAIN) {
 		$package		= self::PACKAGE;
-		$instance		= self::getInstanceId($action);
+		$baseAction		= explode('=', $action);
+		$baseAction		= $baseAction[0];	// Only the bit before the '=' sign
+		$instance		= self::getInstanceId($baseAction);
 		$actionJavascript	= self::ACTION_JAVASCRIPT;
 		$URL			= self::thisURL();
 		$jsVariable		= $package . '_ajax';
-		$js			= $jsVariable . '[' . $jsVariable . '.push(new C_' . $package . "_AJAX()) - 1].execute('$action')";
+		$js			= $jsVariable . "[$jsVariable.push(new C_" . $package . "_AJAX()) - 1].execute('$action')";
 
 		return <<<HTML
 	<div id="$instance"></div>

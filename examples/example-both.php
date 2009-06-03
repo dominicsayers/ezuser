@@ -11,7 +11,7 @@
 	require_once '../ezUser.php';
 	ezUserUI::getContainer('controlpanel');
 	echo '<br style="clear:left;" /><hr />';
-	ezUserUI::getContainer('account=new');
+	ezUserUI::getContainer('account');
 ?>
 </body>
 
