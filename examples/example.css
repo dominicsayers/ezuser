@@ -1,0 +1,88 @@
+﻿div#ezUser {
+		border: medium solid #008000;
+		padding: 8px;
+		font-family: Calibri, "Trebuchet MS", Arial, Helvetica, sans-serif;
+		font-size: large;
+		line-height: 100%;
+		width: 480px;
+		float: left;
+}
+
+div#ezUser-account {
+	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
+	font-size:12px;
+	line-height:100%;
+	width:286px;
+	float:left;
+}
+
+div.ezUser-message {
+	float:left;
+	text-align:center;
+	font-weight:normal;
+}
+
+div.ezUser-text {
+	width:286px;
+	float:left;
+	padding:0;
+	text-align:justify;
+	margin:7px 0 7px 0;
+	line-height:16px;
+}
+
+p.ezUser-message-plain	{margin:0;padding:6px;}
+p.ezUser-message-info	{margin:0;padding:6px;background-color:#FFCC00;color:#000000;}
+p.ezUser-message-text	{margin:0;padding:6px;background-color:#EEEEEE;color:#000000;}
+p.ezUser-message-fail	{margin:0;padding:6px;background-color:#FF0000;color:#FFFFFF;font-weight:bold;}
+p.ezUser-message-hidden	{display:none;}
+
+div.ezUser-fullName {
+	float:right;
+	margin:4px 0 0 0;
+	padding:6px;
+	color:#555555;
+	font-weight:bold;
+}
+
+form.ezUser-form		{margin:0;}
+fieldset.ezUser-fieldset	{margin:0;padding:0;border:0;clear:right;}
+label.ezUser-label		{float:right;padding:4px;}
+
+input.ezUser-text {
+	float:right;
+	font-size:11px;
+	width:160px;
+	margin-bottom:4px;
+}
+
+input.ezUser-button {
+	float:right;
+	padding:2px;
+	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
+	border-style:solid;
+	border-width:1px;
+	cursor:pointer;
+}
+
+input.ezUser-action {
+	font-size:12px;
+	width:52px;
+	margin:0 0 0 6px;
+}
+
+input.ezUser-preference {
+	font-size:10px;
+	margin:4px 0 0 6px;
+}
+
+input.ezUser-preference-verbose {float:left;margin:0;}
+
+input.ezUser-buttonstate-0 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
+input.ezUser-buttonstate-1 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
+input.ezUser-buttonstate-2 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
+input.ezUser-buttonstate-3 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
+input.ezUser-buttonstate-4 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
+input.ezUser-buttonstate-5 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
+input.ezUser-buttonstate-6 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
+input.ezUser-buttonstate-7 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
