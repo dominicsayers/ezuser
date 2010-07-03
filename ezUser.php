@@ -4,27 +4,27 @@
  * 
  * This code has three principle design goals:
  * 
- * 	1. To make it easy for people to register and sign in to your site.
- * 	2. To make it easy for you to add this functionality to your site.
- * 	3. To make it easy for you to administer the user database on your site.
+ *     1. To make it easy for people to register and sign in to your site.
+ *     2. To make it easy for you to add this functionality to your site.
+ *     3. To make it easy for you to administer the user database on your site.
  * 
  * Other design goals, such as run-time efficiency, are important but secondary to
  * these.
  * 
- * Copyright (c) 2008-2009, Dominic Sayers							<br>
+ * Copyright (c) 2008-2010, Dominic Sayers							<br>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  * 
- * 	- Redistributions of source code must retain the above copyright notice,
- * 	  this list of conditions and the following disclaimer.
- * 	- Redistributions in binary form must reproduce the above copyright notice,
- * 	  this list of conditions and the following disclaimer in the documentation
- * 	  and/or other materials provided with the distribution.
- * 	- Neither the name of Dominic Sayers nor the names of its contributors may be
- * 	  used to endorse or promote products derived from this software without
- * 	  specific prior written permission.
+ *     - Redistributions of source code must retain the above copyright notice,
+ *       this list of conditions and the following disclaimer.
+ *     - Redistributions in binary form must reproduce the above copyright notice,
+ *       this list of conditions and the following disclaimer in the documentation
+ *       and/or other materials provided with the distribution.
+ *     - Neither the name of Dominic Sayers nor the names of its contributors may be
+ *       used to endorse or promote products derived from this software without
+ *       specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -38,16 +38,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * @package	ezUser
- * @author	Dominic Sayers <dominic_sayers@hotmail.com>
- * @copyright	2009 Dominic Sayers
+ * @author	Dominic Sayers <dominic@sayers.cc>
+ * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.22 - Newer version of common functions class
+ * @version	0.24.3 - Deferred session start (also common functions class v1.14)
  */
 
 // The quality of this code has been improved greatly by using PHPLint
-// Copyright (c) 2009 Umberto Salsi
-// This is free software; see the license for copying conditions.
+// PHPLint is copyright (c) 2009 Umberto Salsi
+// PHPLint is free software; see the license for copying conditions.
 // More info: http://www.icosaedro.it/phplint/
 /*.
 require_module 'dom';
@@ -57,60 +57,111 @@ require_module 'session';
 .*/
 
 /* Comment out profiling statements if not needed
-function ezUser_time() {list($usec, $sec) = explode(" ",microtime()); return ((float)$usec + (float)$sec);}
-$ezUser_profile			= array();
-$ezUser_profile['REQUEST_TIME']	= $_SERVER['REQUEST_TIME'];
-$ezUser_profile['received']	= ezUser_time();
+function ezuser_time() {list($usec, $sec) = explode(" ",microtime()); return ((float)$usec + (float)$sec);}
+$ezuser_profile			= array();
+$ezuser_profile['REQUEST_TIME']	= $_SERVER['REQUEST_TIME'];
+$ezuser_profile['received']	= ezuser_time();
 */
 
 /**
  * Common utility functions
  *
  * @package ezUser
- * @version 1.2 (revision number of common functions class only)
+ * @version 1.14 (revision number of this common functions class only)
  */
-interface I_ezUser_common {
-	const	PACKAGE			= 'ezUser',
 
-		HASH_FUNCTION		= 'SHA256',
-		URL_SEPARATOR		= '/',
+interface I_ezUser_common {
+//	const	PACKAGE				= 'ezUser',
+//		VERSION				= '0.24', // Version 1.13: added
+// Version 1.14: PACKAGE & VERSION now hard-coded by build process.
+
+	const	HASH_FUNCTION			= 'SHA256',
+		URL_SEPARATOR			= '/',
 
 		// Behaviour settings for strleft()
-		STRLEFT_MODE_NONE	= 0,
-		STRLEFT_MODE_ALL	= 1,
+		STRLEFT_MODE_NONE		= 0,
+		STRLEFT_MODE_ALL		= 1,
 
 		// Behaviour settings for getURL()
-		URL_MODE_PROTOCOL	= 1,
-		URL_MODE_HOST		= 2,
-		URL_MODE_PORT		= 4,
-		URL_MODE_PATH		= 8,
-		URL_MODE_ALL		= 15,
+		URL_MODE_PROTOCOL		= 1,
+		URL_MODE_HOST			= 2,
+		URL_MODE_PORT			= 4,
+		URL_MODE_PATH			= 8,
+		URL_MODE_ALL			= 15,
 
 		// Behaviour settings for getPackage()
-		PACKAGE_CASE_DEFAULT	= 0,
-		PACKAGE_CASE_LOWER	= 0,
-		PACKAGE_CASE_CAMEL	= 1,
-		PACKAGE_CASE_UPPER	= 2;
+//		PACKAGE_CASE_DEFAULT		= 0,
+////		PACKAGE_CASE_LOWER		= 0,
+//		PACKAGE_CASE_CAMEL		= 1,
+//		PACKAGE_CASE_UPPER		= 2,
+// Version 1.14: PACKAGE & VERSION now hard-coded by build process.
+
+		// Extra GLOB constant for safe_glob()
+		GLOB_NODIR			= 256,
+		GLOB_PATH			= 512,
+		GLOB_NODOTS			= 1024,
+		GLOB_RECURSE			= 2048,
+
+		// Email validation constants
+		ISEMAIL_VALID			= 0,
+		ISEMAIL_TOOLONG			= 1,
+		ISEMAIL_NOAT			= 2,
+		ISEMAIL_NOLOCALPART		= 3,
+		ISEMAIL_NODOMAIN		= 4,
+		ISEMAIL_ZEROLENGTHELEMENT	= 5,
+		ISEMAIL_BADCOMMENT_START	= 6,
+		ISEMAIL_BADCOMMENT_END		= 7,
+		ISEMAIL_UNESCAPEDDELIM		= 8,
+		ISEMAIL_EMPTYELEMENT		= 9,
+		ISEMAIL_UNESCAPEDSPECIAL	= 10,
+		ISEMAIL_LOCALTOOLONG		= 11,
+		ISEMAIL_IPV4BADPREFIX		= 12,
+		ISEMAIL_IPV6BADPREFIXMIXED	= 13,
+		ISEMAIL_IPV6BADPREFIX		= 14,
+		ISEMAIL_IPV6GROUPCOUNT		= 15,
+		ISEMAIL_IPV6DOUBLEDOUBLECOLON	= 16,
+		ISEMAIL_IPV6BADCHAR		= 17,
+		ISEMAIL_IPV6TOOMANYGROUPS	= 18,
+		ISEMAIL_TLD			= 19,
+		ISEMAIL_DOMAINEMPTYELEMENT	= 20,
+		ISEMAIL_DOMAINELEMENTTOOLONG	= 21,
+		ISEMAIL_DOMAINBADCHAR		= 22,
+		ISEMAIL_DOMAINTOOLONG		= 23,
+		ISEMAIL_TLDNUMERIC		= 24,
+		ISEMAIL_DOMAINNOTFOUND		= 25;
+//		ISEMAIL_NOTDEFINED		= 99;
 
 	// Basic utility functions
-	public static /*.string.*/	function strleft(/*.string.*/ $haystack, /*.string.*/ $needle);
-	public static /*.string.*/	function getInnerHTML(/*.string.*/ $html, /*.string.*/ $tag);
-	public static /*.string.*/	function array_to_HTML(/*.array[mixed]mixed.*/ $source = NULL);
+	public static /*.string.*/			function strleft(/*.string.*/ $haystack, /*.string.*/ $needle);
+	public static /*.mixed.*/			function getInnerHTML(/*.string.*/ $html, /*.string.*/ $tag);
+	public static /*.array[string][string]string.*/	function meta_to_array(/*.string.*/ $html);
+	public static /*.string.*/			function var_dump_to_HTML(/*.string.*/ $var_dump, $offset = 0);
+	public static /*.string.*/			function array_to_HTML(/*.array[]mixed.*/ $source = NULL);
+
+	// Session functions
+	public static /*.void.*/			function checkSession();
 
 	// Environment functions
-	public static /*.string.*/	function getPackage($mode = self::PACKAGE_CASE_DEFAULT);
-	public static /*.string.*/	function getURL($mode = self::URL_MODE_PATH, $filename = '');
+//	public static /*.string.*/			function getPackage($mode = self::PACKAGE_CASE_DEFAULT); // Version 1.14: PACKAGE & VERSION now hard-coded by build process.
+	public static /*.string.*/			function getURL($mode = self::URL_MODE_PATH, $filename = '');
+	public static /*.string.*/			function docBlock_to_HTML(/*.string.*/ $php);
 
 	// File system functions
-	public static /*.string.*/	function getFileContents(/*.string.*/ $filename, /*.int.*/ $flags = 0, /*.object.*/ $context = NULL, /*.int.*/ $offset = -1, /*.int.*/ $maxLen = -1);
-	public static /*.string.*/	function findIndexFile(/*.string.*/ $folder);
+	public static /*.mixed.*/			function safe_glob(/*.string.*/ $pattern, /*.int.*/ $flags = 0);
+	public static /*.string.*/			function getFileContents(/*.string.*/ $filename, /*.int.*/ $flags = 0, /*.object.*/ $context = NULL, /*.int.*/ $offset = -1, /*.int.*/ $maxLen = -1);
+	public static /*.string.*/			function findIndexFile(/*.string.*/ $folder);
+	public static /*.string.*/			function findTarget(/*.string.*/ $target);
 
 	// Data functions
-	public static /*.string.*/	function makeId();
-	public static /*.string.*/	function makeUniqueKey(/*.string.*/ $id);
+	public static /*.string.*/			function makeId();
+	public static /*.string.*/			function makeUniqueKey(/*.string.*/ $id);
+	public static /*.string.*/			function mt_shuffle(/*.string.*/ $str, /*.int.*/ $seed = 0);
+//	public static /*.void.*/			function mt_shuffle_array(/*.array.*/ &$arr, /*.int.*/ $seed = 0);
+	public static /*.string.*/			function prkg(/*.int.*/ $index, /*.int.*/ $length = 6, /*.int.*/ $base = 34, /*.int.*/ $seed = 0);
 
 	// Validation functions
-	public static /*.boolean.*/	function is_email(/*.string.*/ $email, $checkDNS = false);
+//	public static /*.boolean.*/			function is_email(/*.string.*/ $email, $checkDNS = false);
+	public static /*.mixed.*/			function is_email(/*.string.*/ $email, $checkDNS = false, $diagnose = false); // New parameters from version 1.8
 }
 
 /**
@@ -121,23 +172,18 @@ abstract class ezUser_common implements I_ezUser_common {
  * Return the beginning of a string, up to but not including the search term.
  *
  * @param string $haystack The string containing the search term
- * @param string $needle The end point of the returned string. In other words, if <var>needle<var> is found then the begging of <var>haystack</var> is returned up to the character before <needle>.
+ * @param string $needle The end point of the returned string. In other words, if <var>needle</var> is found then the begging of <var>haystack</var> is returned up to the character before <needle>.
  * @param int $mode If <var>needle</var> is not found then <pre>FALSE</pre> will be returned. */
 	public static /*.string.*/ function strleft(/*.string.*/ $haystack, /*.string.*/ $needle, /*.int.*/ $mode = self::STRLEFT_MODE_NONE) {
 		$posNeedle = strpos($haystack, $needle);
 
 		if ($posNeedle === false) {
-			switch ($mode) {
-			case self::STRLEFT_MODE_NONE:
-				return $posNeedle;
-				break;
-			case self::STRLEFT_MODE_ALL:
+			if ($mode === self::STRLEFT_MODE_ALL)
 				return $haystack;
-				break;
-			}
-		} else {
+			else
+				return (string) $posNeedle;
+		} else
 			return substr($haystack, 0, $posNeedle);
-		}
 	}
 
 /**
@@ -146,11 +192,152 @@ abstract class ezUser_common implements I_ezUser_common {
  * @param string $html The string containing the html to be searched
  * @param string $tag The type of element to search for. The contents of first matching element will be returned. If the element doesn't exist then <var>false</var> is returned.
  */
-	public static /*.string.*/ function getInnerHTML(/*.string.*/ $html, /*.string.*/ $tag) {
-		$pos_tag_open_start	= stripos($html, "<$tag");
-		$pos_tag_open_end	= strpos($html, '>',		$pos_tag_open_start);
-		$pos_tag_close		= stripos($html, "</$tag>",	$pos_tag_open_end);
+	public static /*.mixed.*/ function getInnerHTML(/*.string.*/ $html, /*.string.*/ $tag) {
+		$pos_tag_open_start	= stripos($html, "<$tag")				; if ($pos_tag_open_start	=== false) return false;
+		$pos_tag_open_end	= strpos($html, '>',		$pos_tag_open_start)	; if ($pos_tag_open_end		=== false) return false;
+		$pos_tag_close		= stripos($html, "</$tag>",	$pos_tag_open_end)	; if ($pos_tag_close		=== false) return false;
 		return substr($html, $pos_tag_open_end + 1, $pos_tag_close - $pos_tag_open_end - 1);
+	}
+
+/**
+ * Return the <var>meta</var> tags from an HTML document as an array.
+ *
+ * The array returned will have a 'key' element which is an array of name/value pairs representing all the metadata
+ * from the HTML document. If there are any <var>name</var> or <var>http-equiv</var> meta elements
+ * these will be in their own sub-array. The 'key' sub-array combines all meta tags.
+ *
+ * Qualifying attributes such as <var>lang</var> and <var>scheme</var> have their own sub-arrays with the same key
+ * as the main sub-array.
+ *
+ * Here are some example meta tags:
+ *
+ * <pre>
+ * <meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+ * <meta name="description" content="Free Web tutorials" />
+ * <meta name="keywords" content="HTML,CSS,XML,JavaScript" />
+ * <meta name="author" content="Hege Refsnes" />
+ * <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1" />
+ * <META NAME="ROBOTS" CONTENT="NOYDIR">
+ * <META NAME="Slurp" CONTENT="NOYDIR">
+ * <META name="author" content="John Doe">
+ *   <META name ="copyright" content="&copy; 1997 Acme Corp.">
+ *   <META name= "keywords" content="corporate,guidelines,cataloging">
+ *   <META name = "date" content="1994-11-06T08:49:37+00:00">
+ *       <meta name="DC.title" lang="en" content="Services to Government" >
+ *     <meta name="DCTERMS.modified" scheme="XSD.date" content="2007-07-22" >
+ * <META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+ * <META name="geo.position" content="26.367559;-80.12172">
+ * <META name="geo.region" content="US-FL">
+ * <META name="geo.placename" content="Boca Raton, FL">
+ * <META name="ICBM" content="26.367559, -80.12172">
+ * <META name="DC.title" content="THE NAME OF YOUR SITE">
+ * </pre>
+ *
+ * Here is a dump of the returned array:
+ *
+ * <pre>
+ * array (
+ *   'key' => 
+ *   array (
+ *     'Content-Type' => 'text/html; charset=iso-8859-1',
+ *     'description' => 'Free Web tutorials',
+ *     'keywords' => 'corporate,guidelines,cataloging',
+ *     'author' => 'John Doe',
+ *     'ROBOTS' => 'NOYDIR',
+ *     'Slurp' => 'NOYDIR',
+ *     'copyright' => '&copy; 1997 Acme Corp.',
+ *     'date' => '1994-11-06T08:49:37+00:00',
+ *     'DC.title' => 'THE NAME OF YOUR SITE',
+ *     'DCTERMS.modified' => '2007-07-22',
+ *     'geo.position' => '26.367559;-80.12172',
+ *     'geo.region' => 'US-FL',
+ *     'geo.placename' => 'Boca Raton, FL',
+ *     'ICBM' => '26.367559, -80.12172',
+ *   ),
+ *   'http-equiv' => 
+ *   array (
+ *     'Content-Type' => 'text/html; charset=iso-8859-1',
+ *   ),
+ *   'name' => 
+ *   array (
+ *     'description' => 'Free Web tutorials',
+ *     'keywords' => 'corporate,guidelines,cataloging',
+ *     'author' => 'John Doe',
+ *     'ROBOTS' => 'NOYDIR',
+ *     'Slurp' => 'NOYDIR',
+ *     'copyright' => '&copy; 1997 Acme Corp.',
+ *     'date' => '1994-11-06T08:49:37+00:00',
+ *     'DC.title' => 'THE NAME OF YOUR SITE',
+ *     'DCTERMS.modified' => '2007-07-22',
+ *     'geo.position' => '26.367559;-80.12172',
+ *     'geo.region' => 'US-FL',
+ *     'geo.placename' => 'Boca Raton, FL',
+ *     'ICBM' => '26.367559, -80.12172',
+ *   ),
+ *   'lang' => 
+ *   array (
+ *     'DC.title' => 'en',
+ *   ),
+ *   'scheme' => 
+ *   array (
+ *     'DCTERMS.modified' => 'XSD.date',
+ *   ),
+ * </pre>
+ *
+ * Note how repeated tags cause the previous value to be overwritten in the resulting array
+ * (for example the <var>Content-Type</var> and <var>keywords</var> tags appear twice but the
+ * final array only has one element for each - the lowest one in the original list).
+ *
+ * @param string $html The string containing the html to be parsed
+ */
+	public static /*.array[string][string]string.*/ function meta_to_array(/*.string.*/ $html) {
+		$keyAttributes	= array('name', 'http-equiv', 'charset', 'itemprop');
+		$tags		= /*.(array[int][int]string).*/ array();
+		$query		= '?';
+
+		preg_match_all("|<meta.+/$query>|i", $html, $tags);
+
+		$meta		= /*.(array[string][string]string).*/ array();
+		$key_type	= '';
+		$key		= '';
+		$content	= '';
+
+		foreach ($tags[0] as $tag) {
+			$attributes	= array();
+			$wip		= /*.(array[string]string).*/ array();
+
+			preg_match_all('|\\s(\\S+?)\\s*=\\s*"(.*?)"|', $tag, $attributes);
+
+
+			unset($key_type);
+			unset($key);
+			unset($content);
+
+			for ($i = 0; $i < count($attributes[1]); $i++) {
+				$attribute	= strtolower($attributes[1][$i]);
+				$value		= $attributes[2][$i];
+
+				if (in_array($attribute, $keyAttributes)) {
+					$key_type		= $attribute;
+					$key			= $value;
+				} elseif ($attribute === 'content') {
+					$content		= $value;
+				} else {
+					$wip[$attribute]	= $value;
+				}
+			}
+
+			if (isset($key_type)) {
+				$meta['key'][$key]	= $content;
+				$meta[$key_type][$key]	= $content;
+
+				foreach ($wip as $attribute => $value) {
+					$meta[$attribute][$key] = $value;
+				}
+			}
+		}
+
+		return $meta;
 	}
 
 /**
@@ -160,14 +347,14 @@ abstract class ezUser_common implements I_ezUser_common {
  * @param int $offset Whereabouts to start in the captured string. Defaults to the beginning of the string.
  */
 	public static /*.string.*/ function var_dump_to_HTML(/*.string.*/ $var_dump, $offset = 0) {
-		$html	= '';
 		$indent	= '';
+		$value	= '';
 
-		while ($posStart = strpos($var_dump, '(', $offset)) {
+		while ((boolean) ($posStart = strpos($var_dump, '(', $offset))) {
 			$type	= substr($var_dump, $offset, $posStart - $offset);
 			$nests	= strrpos($type, ' ');
 
-			if ($nests === false) $nests = 0; else $nests = ($nests + 1) / 2;
+			if ($nests === false) $nests = 0; else $nests = intval(($nests + 1) / 2);
 
 			$indent = str_pad('', $nests * 3, "\t");
 			$type	= trim($type);
@@ -178,8 +365,8 @@ abstract class ezUser_common implements I_ezUser_common {
 
 			switch ($type) {
 			case 'string':
-				$length	= $value;
-				$value	= htmlspecialchars(substr($var_dump, $offset + 2, $length));
+				$length	= (int) $value;
+				$value	= '<pre>' . htmlspecialchars(substr($var_dump, $offset + 2, $length)) . '</pre>';
 				$offset	+= $length + 3;
 				break;
 			case 'array':
@@ -233,11 +420,11 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 	}
 
 /**
- * Return the contents of an array as HTML (like <var>var_dump()</var> on steroids)
+ * Return the contents of an array as HTML (like <var>var_dump()</var> on steroids), including object members
  *
  * @param mixed $source The array to export. If it's empty then $GLOBALS is exported.
  */
-	public static /*.string.*/ function array_to_HTML(/*.array[mixed]mixed.*/ $source = NULL) {
+	public static /*.string.*/ function array_to_HTML(/*.array[]mixed.*/ $source = NULL) {
 // If no specific array is passed we will export $GLOBALS to HTML
 // Unfortunately, this means we have to use var_dump() because var_export() barfs on $GLOBALS
 // In fact var_dump is easier to walk than var_export anyway so this is no bad thing.
@@ -250,25 +437,30 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 	}
 
 /**
- * Return the name of this package. By default this will be in lower case for use in Javascript tags etc.
- *
- * @param int $mode One of the <var>PACKAGE_CASE_XXX</var> predefined constants defined in this class
+ * Check session is running. If not start one.
  */
-	public static /*.string.*/ function getPackage($mode = self::PACKAGE_CASE_DEFAULT) {
-		switch ($mode) {
-		case self::PACKAGE_CASE_CAMEL:
-			$package = self::PACKAGE;
-			break;
-		case self::PACKAGE_CASE_UPPER:
-			$package = strtoupper(self::PACKAGE);
-			break;
-		default:
-			$package = strtolower(self::PACKAGE);
-			break;
-		}
+	public static /*.void.*/ function checkSession() {if (!isset($_SESSION) || !is_array($_SESSION) || (session_id() === '')) session_start();}
 
-		return $package;
-	}
+///**
+// * Return the name of this package. By default this will be in lower case for use in Javascript tags etc.
+// *
+// * @param int $mode One of the <var>PACKAGE_CASE_XXX</var> predefined constants defined in this class
+// */
+//	public static /*.string.*/ function getPackage($mode = self::PACKAGE_CASE_DEFAULT) {
+//		switch ($mode) {
+//		case self::PACKAGE_CASE_CAMEL:
+//			$package = self::PACKAGE;
+//			break;
+//		case self::PACKAGE_CASE_UPPER:
+//			$package = strtoupper(self::PACKAGE);
+//			break;
+//		default:
+//			$package = strtolower(self::PACKAGE);
+//			break;
+//		}
+//
+//		return $package;
+//	}
 
 /**
  * Return all or part of the URL of the current script.
@@ -276,14 +468,15 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
  * @param int $mode One of the <var>URL_MODE_XXX</var> predefined constants defined in this class
  * @param string $filename If this is not empty then the returned script name is forced to be this filename.
  */
-	public static /*.string.*/ function getURL($mode = self::URL_MODE_PATH, $filename = self::PACKAGE) {
+	public static /*.string.*/ function getURL($mode = self::URL_MODE_PATH, $filename = 'ezUser') {
+// Version 1.14: PACKAGE & VERSION now hard-coded by build process.
 		$portInteger = array_key_exists('SERVER_PORT', $_SERVER) ? (int) $_SERVER['SERVER_PORT'] : 0;
 
 		if (array_key_exists('HTTPS', $_SERVER) && $_SERVER['HTTPS'] === 'on') {
 			$protocolType = 'https';
 		} else if (array_key_exists('SERVER_PROTOCOL', $_SERVER)) {
 			$protocolType = strtolower(self::strleft($_SERVER['SERVER_PROTOCOL'], self::URL_SEPARATOR, self::STRLEFT_MODE_ALL));
-		} else if ($portInteger = 443) {
+		} else if ($portInteger === 443) {
 			$protocolType = 'https';
 		} else {
 			$protocolType = 'http';
@@ -292,21 +485,21 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 		if ($portInteger === 0) $portInteger = ($protocolType === 'https') ? 443 : 80;
 
 		// Protocol
-		if ($mode & self::URL_MODE_PROTOCOL) {
+		if ((boolean) ($mode & self::URL_MODE_PROTOCOL)) {
 			$protocol = ($mode === self::URL_MODE_PROTOCOL) ? $protocolType : "$protocolType://";
 		} else {
 			$protocol = '';
 		}
 
 		// Host
-		if ($mode & self::URL_MODE_HOST) {
+		if ((boolean) ($mode & self::URL_MODE_HOST)) {
 			$host = array_key_exists('HTTP_HOST', $_SERVER) ? self::strleft($_SERVER['HTTP_HOST'], ':', self::STRLEFT_MODE_ALL) : '';
 		} else {
 			$host = '';
 		}
 
 		// Port
-		if ($mode & self::URL_MODE_PORT) {
+		if ((boolean) ($mode & self::URL_MODE_PORT)) {
 			$port = (string) $portInteger;
 
 			if ($mode !== self::URL_MODE_PORT)
@@ -316,7 +509,7 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 		}
 
 		// Path
-		if ($mode & self::URL_MODE_PATH) {
+		if ((boolean) ($mode & self::URL_MODE_PATH)) {
 			$includePath	= __FILE__;
 			$scriptPath	= realpath($_SERVER['SCRIPT_FILENAME']);
 
@@ -325,7 +518,20 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 				$scriptPath	= (string) str_replace(DIRECTORY_SEPARATOR, self::URL_SEPARATOR , $scriptPath);
 			}
 
-			$path = dirname(substr($includePath, strpos(strtolower($scriptPath), strtolower($_SERVER['SCRIPT_NAME'])))) . self::URL_SEPARATOR . $filename;
+/*
+echo "<pre>\n"; // debug
+echo "\$_SERVER['SCRIPT_FILENAME'] = " . $_SERVER['SCRIPT_FILENAME'] . "\n"; // debug
+echo "\$_SERVER['SCRIPT_NAME'] = " . $_SERVER['SCRIPT_NAME'] . "\n"; // debug
+echo "dirname(\$_SERVER['SCRIPT_NAME']) = " . dirname($_SERVER['SCRIPT_NAME']) . "\n"; // debug
+echo "\$includePath = $includePath\n"; // debug
+echo "\$scriptPath = $scriptPath\n"; // debug
+//echo self::array_to_HTML(); // debug
+echo "</pre>\n"; // debug
+*/
+
+			$start	= strpos(strtolower($scriptPath), strtolower($_SERVER['SCRIPT_NAME']));
+			$path	= ($start === false) ? dirname($_SERVER['SCRIPT_NAME']) : dirname(substr($includePath, $start));
+			$path	.= self::URL_SEPARATOR . $filename;
 		} else {
 			$path = '';
 		}
@@ -334,12 +540,162 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 	}
 
 /**
+ * Convert a DocBlock to HTML (see http://java.sun.com/j2se/javadoc/writingdoccomments/index.html)
+ *
+ * @param string $docBlock Some PHP code containing a valid DocBlock.
+ */
+	public static /*.string.*/ function docBlock_to_HTML(/*.string.*/ $php) {
+// Updated in version 1.12 (bug fixes and formatting)
+//		$package	= self::getPackage(self::PACKAGE_CASE_CAMEL); // Version 1.14: PACKAGE & VERSION now hard-coded by build process.
+		$eol		= "\r\n";
+		$tagStart	= strpos($php, "/**$eol * ");
+
+		if ($tagStart === false) return 'Development version';
+
+		// Get summary and long description
+		$tagStart	+= 8;
+		$tagEnd		= strpos($php, $eol, $tagStart);
+		$summary	= substr($php, $tagStart, $tagEnd - $tagStart);
+		$tagStart	= $tagEnd + 7;
+		$tagPos		= strpos($php, "$eol * @") + 2;
+		$description	= substr($php, $tagStart, $tagPos - $tagStart - 7);
+		$description	= (string) str_replace(' * ', '' , $description);
+
+		// Get tags and values from DocBlock
+		do {
+			$tagStart	= $tagPos + 4;
+			$tagEnd		= strpos($php, "\t", $tagStart);
+			$tag		= substr($php, $tagStart, $tagEnd - $tagStart);
+			$offset		= $tagEnd + 1;
+			$tagPos		= strpos($php, $eol, $offset);
+			$value		= htmlspecialchars(substr($php, $tagEnd + 1, $tagPos - $tagEnd - 1));
+			$tagPos		= strpos($php, " * @", $offset);
+
+//			$$tag		= htmlspecialchars($value); // The easy way. But PHPlint doesn't like it, so...
+
+//			$package	= '';
+//			$summary	= '';
+//			$description	= '';
+
+			switch ($tag) {
+			case 'license':		$license	= $value; break;
+			case 'author':		$author		= $value; break;
+			case 'link':		$link		= $value; break;
+			case 'version':		$version	= $value; break;
+			case 'copyright':	$copyright	= $value; break;
+			default:		$value		= $value;
+			}
+		} while ((boolean) $tagPos);
+
+		// Add some links
+		// 1. License
+		if (isset($license) && (boolean) strpos($license, '://')) {
+			$tagPos		= strpos($license, ' ');
+			$license	= '<a href="' . substr($license, 0, $tagPos) . '">' . substr($license, $tagPos + 1) . '</a>';
+		}
+
+		// 2. Author
+		if (isset($author) && preg_match('/&lt;.+@.+&gt;/', $author) > 0) {
+			$tagStart	= strpos($author, '&lt;') + 4;
+			$tagEnd		= strpos($author, '&gt;', $tagStart);
+			$author		= '<a href="mailto:' . substr($author, $tagStart, $tagEnd - $tagStart) . '">' . substr($author, 0, $tagStart - 5) . '</a>';
+		}
+
+		// 3. Link
+		if (isset($link) && (boolean) strpos($link, '://')) {
+			$link		= '<a href="' . $link . '">' . $link . '</a>';
+		}
+
+		// Build the HTML
+		$html = <<<HTML
+	<h1>ezUser</h1>
+	<h2>$summary</h2>
+	<pre>$description</pre>
+	<hr />
+	<table>
+
+HTML;
+// Version 1.14: PACKAGE & VERSION now hard-coded by build process.
+
+		if (isset($version))	$html .= "\t\t<tr><td>Version</td><td>$version</td></tr>\n";
+		if (isset($copyright))	$html .= "\t\t<tr><td>Copyright</td><td>$copyright</td></tr>\n";
+		if (isset($license))	$html .= "\t\t<tr><td>License</td><td>$license</td></tr>\n";
+		if (isset($author))	$html .= "\t\t<tr><td>Author</td><td>$author</td></tr>\n";
+		if (isset($link))	$html .= "\t\t<tr><td>Link</td><td>$link</td></tr>\n";
+
+		$html .= "\t</table>";
+		return $html;
+	}
+
+/**
+ * glob() replacement (in case glob() is disabled).
+ *
+ * Function glob() is prohibited on some server (probably in safe mode)
+ * (Message "Warning: glob() has been disabled for security reasons in
+ * (script) on line (line)") for security reasons as stated on:
+ * http://seclists.org/fulldisclosure/2005/Sep/0001.html
+ *
+ * safe_glob() intends to replace glob() using readdir() & fnmatch() instead.
+ * Supported flags: GLOB_MARK, GLOB_NOSORT, GLOB_ONLYDIR
+ * Additional flags: GLOB_NODIR, GLOB_PATH, GLOB_NODOTS, GLOB_RECURSE
+ * (these were not original glob() flags)
+ * @author BigueNique AT yahoo DOT ca
+ */
+	public static /*.mixed.*/ function safe_glob(/*.string.*/ $pattern, /*.int.*/ $flags = 0) {
+		$split	= explode('/', (string) str_replace('\\', '/', $pattern));
+		$mask	= (string) array_pop($split);
+		$path	= (count($split) === 0) ? '.' : implode('/', $split);
+		$dir	= @opendir($path);
+
+		if ($dir === false) return false;
+
+		$glob	= /*.(array[int]).*/ array();
+
+		do {
+			$filename = readdir($dir);
+			if ($filename === false) break;
+
+			$is_dir	= is_dir("$path/$filename");
+			$is_dot	= in_array($filename, array('.', '..'));
+
+			// Recurse subdirectories (if GLOB_RECURSE is supplied)
+			if ($is_dir && !$is_dot && (($flags & self::GLOB_RECURSE) !== 0)) {
+				$sub_glob	= /*.(array[int]).*/ self::safe_glob($path.'/'.$filename.'/'.$mask,  $flags);
+//					array_prepend($sub_glob, ((boolean) ($flags & self::GLOB_PATH) ? '' : $filename.'/'));
+				$glob		= /*.(array[int]).*/ array_merge($glob, $sub_glob);
+			}
+
+			// Match file mask
+			if (fnmatch($mask, $filename)) {
+				if (	((($flags & GLOB_ONLYDIR) === 0)	|| $is_dir)
+				&&	((($flags & self::GLOB_NODIR) === 0)	|| !$is_dir)
+				&&	((($flags & self::GLOB_NODOTS) === 0)	|| !$is_dot)
+				)
+					$glob[] = (($flags & self::GLOB_PATH) !== 0 ? $path.'/' : '') . $filename . (($flags & GLOB_MARK) !== 0 ? '/' : '');
+			}
+		} while(true);
+
+		closedir($dir);
+		if (($flags & GLOB_NOSORT) === 0) sort($glob);
+
+		return $glob;
+	}
+
+/**
  * Return file contents as a string. Fail silently if the file can't be opened.
  *
  * The parameters are the same as the built-in PHP function {@link http://www.php.net/file_get_contents file_get_contents}
  */
 	public static /*.string.*/ function getFileContents(/*.string.*/ $filename, /*.int.*/ $flags = 0, /*.object.*/ $context = NULL, /*.int.*/ $offset = -1, /*.int.*/ $maxlen = -1) {
-		$contents = @file_get_contents($filename, $flags, $context, $offset, $maxlen);
+		// From the documentation of file_get_contents:
+		// Note: The default value of maxlen is not actually -1; rather, it is an internal PHP value which means to copy the entire stream until end-of-file is reached. The only way to specify this default value is to leave it out of the parameter list.
+		if ($maxlen === -1) {
+			$contents = @file_get_contents($filename, $flags, $context, $offset);
+		} else {
+			$contents = @file_get_contents($filename, $flags, $context, $offset, $maxlen);
+// version 1.9 - remembered the @s
+		}
+
 		if ($contents === false) $contents = '';
 		return $contents;
 	}
@@ -362,12 +718,24 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 	}
 
 /**
- * Return the name of the target file from a string that might be a directory. If it's a directory then look for an index file in the directory.
+ * Return the name of the target file from a string that might be a directory or just a basename without a suffix. If it's a directory then look for an index file in the directory.
  *
  * @param string $target The file to look for or folder to look in. If no file can be found then an empty string is returned.
  */
 	public static /*.string.*/ function findTarget(/*.string.*/ $target) {
+		// Is it actually a file? If so, look no further
 		if (is_file($target)) return $target;
+
+		// Added in version 1.7
+		// Is it a basename? i.e. can we find $target.html or something?
+		$suffixes = array('shtml', 'html', 'php', 'pl', 'cgi', 'asp', 'htm');
+
+		foreach ($suffixes as $suffix) {
+			$filename = "$target.$suffix";
+			if (is_file($filename)) return $filename;
+		}
+
+		// Otherwise, let's assume it's a directory and try to find an index file in that directory
 		return self::findIndexFile($target);
 	}
 
@@ -377,7 +745,7 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 	public static /*.string.*/ function makeId() {
 // Note could also try this: return md5(uniqid(mt_rand(), true));
 		list($usec, $sec) = explode(" ", (string) microtime());
-		return base_convert($sec, 10, 36) . base_convert((string) mt_rand(0, 35), 10, 36) . str_pad(base_convert(($usec * 1000000), 10, 36), 4, '_', STR_PAD_LEFT);		
+		return base_convert($sec, 10, 36) . base_convert((string) mt_rand(0, 35), 10, 36) . str_pad(base_convert(($usec * 1000000), 10, 36), 4, '_', STR_PAD_LEFT);
 	}
 
 /**
@@ -387,38 +755,198 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 		return hash(self::HASH_FUNCTION, $_SERVER['REQUEST_TIME'] . $id);
 	}
 
+// Added in version 1.10
+/**
+ * Shuffle a string using the Mersenne Twist PRNG (can be deterministically seeded)
+ *
+ * @param string $str The string to be shuffled
+ * @param int $seed The seed for the PRNG means this can be used to shuffle the string in the same order every time
+ */
+	public static /*.string.*/ function mt_shuffle(/*.string.*/ $str, /*.int.*/ $seed = 0) {
+		$count	= strlen($str);
+		$result	= $str;
+
+		// Seed the RNG with a deterministic seed
+		mt_srand($seed);
+
+		// Shuffle the digits
+		for ($element = $count - 1; $element >= 0; $element--) {
+			$shuffle		= mt_rand(0, $element);
+
+			$value			= $result[$shuffle];
+//			$result[$shuffle]	= $result[$element];
+//			$result[$element]	= $value;		// PHPLint doesn't like this syntax, so...
+
+			substr_replace($result, $result[$element], $shuffle, 1);
+			substr_replace($result, $value, $element, 1);
+		}
+
+		return $result;
+	}
+
+// Added in version 1.10
+/**
+ * Shuffle an array using the Mersenne Twist PRNG (can be deterministically seeded)
+ *
+ */
+	public static /*.void.*/ function mt_shuffle_array(/*.array.*/ &$arr, /*.int.*/ $seed = 0) {
+		$count	= count($arr);
+		$keys	= array_keys($arr);
+
+		// Seed the RNG with a deterministic seed
+		mt_srand($seed);
+
+		// Shuffle the digits
+		for ($element = $count - 1; $element >= 0; $element--) {
+			$shuffle		= mt_rand(0, $element);
+
+			$key_shuffle		= $keys[$shuffle];
+			$key_element		= $keys[$element];
+
+			$value			= $arr[$key_shuffle];
+			$arr[$key_shuffle]	= $arr[$key_element];
+			$arr[$key_element]	= $value;
+		}
+	}
+
+// Added in version 1.10
+/**
+ * The Pseudo-Random Key Generator returns an apparently random key of
+ * length $length and comprising digits specified by $base. However, for
+ * a given seed this key depends only on $index.
+ * 
+ * In other words, if you keep the $seed constant then you'll get a
+ * non-repeating series of keys as you increment $index but these keys
+ * will be returned in a pseudo-random order.
+ * 
+ * The $seed parameter is available in case you want your series of keys
+ * to come out in a different order to mine.
+ * 
+ * Comparison of bases:
+ * <pre>
+ * +------+----------------+---------------------------------------------+
+ * |      | Max keys       |                                             |
+ * |      | (based on      |                                             |
+ * | Base | $length = 6)   | Notes                                       |
+ * +------+----------------+---------------------------------------------+
+ * | 2    | 64             | Uses digits 0 and 1 only                    |
+ * | 8    | 262,144        | Uses digits 0-7 only                        |
+ * | 10   | 1,000,000      | Good choice if you need integer keys        |
+ * | 16   | 16,777,216     | Good choice if you need hex keys            |
+ * | 26   | 308,915,776    | Good choice if you need purely alphabetic   |
+ * |      |                | keys (case-insensitive)                     |
+ * | 32   | 1,073,741,824  | Smallest base that gives you a billion keys |
+ * |      |                | in 6 digits                                 |
+ * | 34   | 1,544,804,416  | (default) Good choice if you want to        |
+ * |      |                | maximise your keyset size but still         |
+ * |      |                | generate keys that are unambiguous and      |
+ * |      |                | case-insensitive (no confusion between 1, I |
+ * |      |                | and l for instance)                         |
+ * | 36   | 2,176,782,336  | Same digits as base-34 but includes 'O' and |
+ * |      |                | 'I' (may be confused with '0' and '1' in    |
+ * |      |                | some fonts)                                 |
+ * | 52   | 19,770,609,664 | Good choice if you need purely alphabetic   |
+ * |      |                | keys (case-sensitive)                       |
+ * | 62   | 56,800,235,584 | Same digits as other URL shorteners         |
+ * |      |                | (e.g bit.ly)                                |
+ * | 66   | 82,653,950,016 | Includes all legal URI characters           |
+ * |      |                | (http://tools.ietf.org/html/rfc3986)        |
+ * |      |                | This is the maximum size of keyset that     |
+ * |      |                | results in a legal URL for a given length   |
+ * |      |                | of key.                                     |
+ * +------+----------------+---------------------------------------------+
+ * </pre>
+ * @param int $index The number to be converted into a key
+ * @param int $length The length of key to be returned. Along with the $base this determines the size of the keyset
+ * @param int $base The number of distinct characters that can be included in the key to be returned. Along with the $length this determines the size of the keyset
+ * @param int $seed The seed for the PRNG means this can be used to generate keys in the same sequence every time
+ */
+	public static /*.string.*/ function prkg($index, $length = 6, $base = 34, $seed = 0) {
+		/*
+		To return a pseudo-random key, we will take $index, convert it
+		to base $base, then randomize the order of the digits. In
+		addition we will give each digit a random offset.
+
+		All the randomization operations are deterministic (based on
+		$seed) so each time the function is called we will get the
+		same shuffling of digits and the same offset for each digit.
+		*/
+		$digits	= '0123456789ABCDEFGHJKLMNPQRSTUVWXYZIOabcdefghijklmnopqrstuvwxyz-._~';
+		//					    ^ base 34 recommended
+
+		// Is $base in range?
+		if ($base < 2)			{die('Base must be greater than or equal to 2');}
+		if ($base > 66)			{die('Base must be less than or equal to 66');}
+
+		// Is $length in range?
+		if ($length < 1)		{die('Length must be greater than or equal to 1');}
+		// Max length depends on arithmetic functions of PHP
+
+		// Is $index in range?
+		$max_index = (int) pow($base, $length);
+		if ($index < 0)			{die('Index must be greater than or equal to 0');}
+		if ($index > $max_index)	{die('Index must be less than or equal to ' . $max_index);}
+
+		// Seed the RNG with a deterministic seed
+		mt_srand($seed);
+
+		// Convert to $base
+		$remainder	= $index;
+		$digit		= 0;
+		$result		= '';
+
+		while ($digit < $length) {
+			$unit		= (int) pow($base, $length - $digit++ - 1);
+			$value		= (int) floor($remainder / $unit);
+			$remainder	= $remainder - ($value * $unit);
+
+			// Shift the digit
+			$value		= ($value + mt_rand(0, $base - 1)) % $base;
+			$result		.= $digits[$value];
+		}
+
+		// Shuffle the digits
+		$result	= self::mt_shuffle($result, $seed);
+
+		// We're done
+		return $result;
+	}
+
+// Updated in version 1.8
 /**
  * Check that an email address conforms to RFC5322 and other RFCs
  *
  * @param boolean $checkDNS If true then a DNS check for A and MX records will be made
+ * @param boolean $diagnose If true then return an integer error number rather than true or false
  */
-	public static /*.boolean.*/ function is_email(/*.string.*/ $email, $checkDNS = false) {
+	public static /*.mixed.*/ function is_email (/*.string.*/ $email, $checkDNS = false, $diagnose = false) {
 		// Check that $email is a valid address. Read the following RFCs to understand the constraints:
-		//	(http://tools.ietf.org/html/rfc5322)
-		//	(http://tools.ietf.org/html/rfc3696)
-		//	(http://tools.ietf.org/html/rfc5321)
-		//	(http://tools.ietf.org/html/rfc4291#section-2.2)
-		//	(http://tools.ietf.org/html/rfc1123#section-2.1)
+		// 	(http://tools.ietf.org/html/rfc5322)
+		// 	(http://tools.ietf.org/html/rfc3696)
+		// 	(http://tools.ietf.org/html/rfc5321)
+		// 	(http://tools.ietf.org/html/rfc4291#section-2.2)
+		// 	(http://tools.ietf.org/html/rfc1123#section-2.1)
 
 		// the upper limit on address lengths should normally be considered to be 256
-		//	(http://www.rfc-editor.org/errata_search.php?rfc=3696)
-		//	NB I think John Klensin is misreading RFC 5321 and the the limit should actually be 254
-		//	However, I will stick to the published number until it is changed.
+		// 	(http://www.rfc-editor.org/errata_search.php?rfc=3696)
+		// 	NB I think John Klensin is misreading RFC 5321 and the the limit should actually be 254
+		// 	However, I will stick to the published number until it is changed.
 		//
 		// The maximum total length of a reverse-path or forward-path is 256
 		// characters (including the punctuation and element separators)
-		//	(http://tools.ietf.org/html/rfc5321#section-4.5.3.1.3)
+		// 	(http://tools.ietf.org/html/rfc5321#section-4.5.3.1.3)
 		$emailLength = strlen($email);
-		if ($emailLength > 256)	return false;	// Too long
+		if ($emailLength > 256)			if ($diagnose) return self::ISEMAIL_TOOLONG; else return false;	// Too long
 
 		// Contemporary email addresses consist of a "local part" separated from
 		// a "domain part" (a fully-qualified domain name) by an at-sign ("@").
-		//	(http://tools.ietf.org/html/rfc3696#section-3)
+		// 	(http://tools.ietf.org/html/rfc3696#section-3)
 		$atIndex = strrpos($email,'@');
 
-		if ($atIndex === false)		return false;	// No at-sign
-		if ($atIndex === 0)		return false;	// No local part
-		if ($atIndex === $emailLength)	return false;	// No domain part
+		if ($atIndex === false)			if ($diagnose) return self::ISEMAIL_NOAT; else return false;	// No at-sign
+		if ($atIndex === 0)			if ($diagnose) return self::ISEMAIL_NOLOCALPART; else return false;	// No local part
+		if ($atIndex === $emailLength - 1)	if ($diagnose) return self::ISEMAIL_NODOMAIN; else return false;	// No domain part
+	// revision 1.14: Length test bug suggested by Andrew Campbell of Gloucester, MA
 
 		// Sanitize comments
 		// - remove nested comments, quotes and dots in comments
@@ -484,8 +1012,8 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 				}
 
 				$escapeThisChar = false;
-//				if ($replaceChar) $email[$i] = 'x';	// Replace the offending character with something harmless
-// revision 1.12: Line above replaced because PHPLint doesn't like that syntax
+	//			if ($replaceChar) $email[$i] = 'x';	// Replace the offending character with something harmless
+	// revision 1.12: Line above replaced because PHPLint doesn't like that syntax
 				if ($replaceChar) $email = (string) substr_replace($email, 'x', $i, 1);	// Replace the offending character with something harmless
 			}
 		}
@@ -497,7 +1025,7 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 		//
 		// local-part      =       dot-atom / quoted-string / obs-local-part
 		// obs-local-part  =       word *("." word)
-		//	(http://tools.ietf.org/html/rfc5322#section-3.4.1)
+		// 	(http://tools.ietf.org/html/rfc5322#section-3.4.1)
 		//
 		// Problem: need to distinguish between "first.last" and "first"."last"
 		// (i.e. one element or two). And I suck at regexes.
@@ -506,16 +1034,18 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 
 		foreach ($dotArray as $element) {
 			// Remove any leading or trailing FWS
-			$element = preg_replace("/^$FWS|$FWS\$/", '', $element);
+			$element	= preg_replace("/^$FWS|$FWS\$/", '', $element);
+			$elementLength	= strlen($element);
 
-			// Then we need to remove all valid comments (i.e. those at the start or end of the element
-			$elementLength = strlen($element);
+			if ($elementLength === 0)								if ($diagnose) return self::ISEMAIL_ZEROLENGTHELEMENT; else return false;	// Can't have empty element (consecutive dots or dots at the start or end)
+	// revision 1.15: Speed up the test and get rid of "unitialized string offset" notices from PHP
 
+			// We need to remove any valid comments (i.e. those at the start or end of the element)
 			if ($element[0] === '(') {
 				$indexBrace = strpos($element, ')');
 				if ($indexBrace !== false) {
 					if (preg_match('/(?<!\\\\)[\\(\\)]/', substr($element, 1, $indexBrace - 1)) > 0) {
-														return false;	// Illegal characters in comment
+														if ($diagnose) return self::ISEMAIL_BADCOMMENT_START; else return false;	// Illegal characters in comment
 					}
 					$element	= substr($element, $indexBrace + 1, $elementLength - $indexBrace - 1);
 					$elementLength	= strlen($element);
@@ -526,7 +1056,7 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 				$indexBrace = strrpos($element, '(');
 				if ($indexBrace !== false) {
 					if (preg_match('/(?<!\\\\)(?:[\\(\\)])/', substr($element, $indexBrace + 1, $elementLength - $indexBrace - 2)) > 0) {
-														return false;	// Illegal characters in comment
+														if ($diagnose) return self::ISEMAIL_BADCOMMENT_END; else return false;	// Illegal characters in comment
 					}
 					$element	= substr($element, 0, $indexBrace);
 					$elementLength	= strlen($element);
@@ -550,37 +1080,37 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 				// My regex skillz aren't up to distinguishing between \" \\" \\\" \\\\" etc.
 				// So remove all \\ from the string first...
 				$element = preg_replace('/\\\\\\\\/', ' ', $element);
-				if (preg_match('/(?<!\\\\|^)["\\r\\n\\x00](?!$)|\\\\"$|""/', $element) > 0)	return false;	// ", CR, LF and NUL must be escaped, "" is too short
+				if (preg_match('/(?<!\\\\|^)["\\r\\n\\x00](?!$)|\\\\"$|""/', $element) > 0)	if ($diagnose) return self::ISEMAIL_UNESCAPEDDELIM; else return false;	// ", CR, LF and NUL must be escaped, "" is too short
 			} else {
 				// Unquoted string tests:
 				//
 				// Period (".") may...appear, but may not be used to start or end the
 				// local part, nor may two or more consecutive periods appear.
-				//	(http://tools.ietf.org/html/rfc3696#section-3)
+				// 	(http://tools.ietf.org/html/rfc3696#section-3)
 				//
 				// A zero-length element implies a period at the beginning or end of the
 				// local part, or two periods together. Either way it's not allowed.
-				if ($element === '')								return false;	// Dots in wrong place
+				if ($element === '')								if ($diagnose) return self::ISEMAIL_EMPTYELEMENT; else return false;	// Dots in wrong place
 
 				// Any ASCII graphic (printing) character other than the
 				// at-sign ("@"), backslash, double quote, comma, or square brackets may
 				// appear without quoting.  If any of that list of excluded characters
 				// are to appear, they must be quoted
-				//	(http://tools.ietf.org/html/rfc3696#section-3)
+				// 	(http://tools.ietf.org/html/rfc3696#section-3)
 				//
 				// Any excluded characters? i.e. 0x00-0x20, (, ), <, >, [, ], :, ;, @, \, comma, period, "
-				if (preg_match('/[\\x00-\\x20\\(\\)<>\\[\\]:;@\\\\,\\."]/', $element) > 0)	return false;	// These characters must be in a quoted string
+				if (preg_match('/[\\x00-\\x20\\(\\)<>\\[\\]:;@\\\\,\\."]/', $element) > 0)	if ($diagnose) return self::ISEMAIL_UNESCAPEDSPECIAL; else return false;	// These characters must be in a quoted string
 			}
 		}
 
-		if ($partLength > 64) return false;	// Local part must be 64 characters or less
+		if ($partLength > 64) if ($diagnose) return self::ISEMAIL_LOCALTOOLONG; else return false;	// Local part must be 64 characters or less
 
 		// Now let's check the domain part...
 
 		// The domain name can also be replaced by an IP address in square brackets
-		//	(http://tools.ietf.org/html/rfc3696#section-3)
-		//	(http://tools.ietf.org/html/rfc5321#section-4.1.3)
-		//	(http://tools.ietf.org/html/rfc4291#section-2.2)
+		// 	(http://tools.ietf.org/html/rfc3696#section-3)
+		// 	(http://tools.ietf.org/html/rfc5321#section-4.1.3)
+		// 	(http://tools.ietf.org/html/rfc4291#section-2.2)
 		if (preg_match('/^\\[(.)+]$/', $domain) === 1) {
 			// It's an address-literal
 			$addressLiteral = substr($domain, 1, strlen($domain) - 2);
@@ -592,18 +1122,18 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 
 				if ($index === 0) {
 					// Nothing there except a valid IPv4 address, so...
-					return true;
+					if ($diagnose) return self::ISEMAIL_VALID; else return true;
 				} else {
 					// Assume it's an attempt at a mixed address (IPv6 + IPv4)
-					if ($addressLiteral[$index - 1] !== ':')	return false;	// Character preceding IPv4 address must be ':'
-					if (substr($addressLiteral, 0, 5) !== 'IPv6:')	return false;	// RFC5321 section 4.1.3
+					if ($addressLiteral[$index - 1] !== ':')	if ($diagnose) return self::ISEMAIL_IPV4BADPREFIX; else return false;	// Character preceding IPv4 address must be ':'
+					if (substr($addressLiteral, 0, 5) !== 'IPv6:')	if ($diagnose) return self::ISEMAIL_IPV6BADPREFIXMIXED; else return false;	// RFC5321 section 4.1.3
 
 					$IPv6		= substr($addressLiteral, 5, ($index ===7) ? 2 : $index - 6);
 					$groupMax	= 6;
 				}
 			} else {
 				// It must be an attempt at pure IPv6
-				if (substr($addressLiteral, 0, 5) !== 'IPv6:')		return false;	// RFC5321 section 4.1.3
+				if (substr($addressLiteral, 0, 5) !== 'IPv6:')		if ($diagnose) return self::ISEMAIL_IPV6BADPREFIX; else return false;	// RFC5321 section 4.1.3
 				$IPv6 = substr($addressLiteral, 5);
 				$groupMax = 8;
 			}
@@ -613,19 +1143,19 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 
 			if ($index === false) {
 				// We need exactly the right number of groups
-				if ($groupCount !== $groupMax)				return false;	// RFC5321 section 4.1.3
+				if ($groupCount !== $groupMax)				if ($diagnose) return self::ISEMAIL_IPV6GROUPCOUNT; else return false;	// RFC5321 section 4.1.3
 			} else {
-				if ($index !== strrpos($IPv6,'::'))			return false;	// More than one '::'
+				if ($index !== strrpos($IPv6,'::'))			if ($diagnose) return self::ISEMAIL_IPV6DOUBLEDOUBLECOLON; else return false;	// More than one '::'
 				$groupMax = ($index === 0 || $index === (strlen($IPv6) - 2)) ? $groupMax : $groupMax - 1;
-				if ($groupCount > $groupMax)				return false;	// Too many IPv6 groups in address
+				if ($groupCount > $groupMax)				if ($diagnose) return self::ISEMAIL_IPV6TOOMANYGROUPS; else return false;	// Too many IPv6 groups in address
 			}
 
 			// Check for unmatched characters
 			array_multisort($matchesIP[1], SORT_DESC);
-			if ($matchesIP[1][0] !== '')					return false;	// Illegal characters in address
+			if ($matchesIP[1][0] !== '')					if ($diagnose) return self::ISEMAIL_IPV6BADCHAR; else return false;	// Illegal characters in address
 
 			// It's a valid IPv6 address, so...
-			return true;
+			if ($diagnose) return self::ISEMAIL_VALID; else return true;
 		} else {
 			// It's a domain name...
 
@@ -633,43 +1163,49 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 			// One aspect of host name syntax is hereby changed: the
 			// restriction on the first character is relaxed to allow either a
 			// letter or a digit.
-			//	(http://tools.ietf.org/html/rfc1123#section-2.1)
+			// 	(http://tools.ietf.org/html/rfc1123#section-2.1)
 			//
 			// NB RFC 1123 updates RFC 1035, but this is not currently apparent from reading RFC 1035.
 			//
 			// Most common applications, including email and the Web, will generally not
 			// permit...escaped strings
-			//	(http://tools.ietf.org/html/rfc3696#section-2)
+			// 	(http://tools.ietf.org/html/rfc3696#section-2)
 			//
 			// the better strategy has now become to make the "at least one period" test,
 			// to verify LDH conformance (including verification that the apparent TLD name
 			// is not all-numeric)
-			//	(http://tools.ietf.org/html/rfc3696#section-2)
+			// 	(http://tools.ietf.org/html/rfc3696#section-2)
 			//
 			// Characters outside the set of alphabetic characters, digits, and hyphen MUST NOT appear in domain name
 			// labels for SMTP clients or servers
-			//	(http://tools.ietf.org/html/rfc5321#section-4.1.2)
+			// 	(http://tools.ietf.org/html/rfc5321#section-4.1.2)
 			//
 			// RFC5321 precludes the use of a trailing dot in a domain name for SMTP purposes
-			//	(http://tools.ietf.org/html/rfc5321#section-4.1.2)
+			// 	(http://tools.ietf.org/html/rfc5321#section-4.1.2)
 			$dotArray	= /*. (array[int]string) .*/ preg_split('/\\.(?=(?:[^\\"]*\\"[^\\"]*\\")*(?![^\\"]*\\"))/m', $domain);
 			$partLength	= 0;
 			$element	= ''; // Since we use $element after the foreach loop let's make sure it has a value
+	// revision 1.13: Line above added because PHPLint now checks for Definitely Assigned Variables
 
-			if (count($dotArray) === 1)					return false;	// Mail host can't be a TLD
+			if (count($dotArray) === 1)					if ($diagnose) return self::ISEMAIL_TLD; else return false;	// Mail host can't be a TLD (cite? What about localhost?)
 
 			foreach ($dotArray as $element) {
 				// Remove any leading or trailing FWS
-				$element = preg_replace("/^$FWS|$FWS\$/", '', $element);
+				$element	= preg_replace("/^$FWS|$FWS\$/", '', $element);
+				$elementLength	= strlen($element);
+
+				// Each dot-delimited component must be of type atext
+				// A zero-length element implies a period at the beginning or end of the
+				// local part, or two periods together. Either way it's not allowed.
+				if ($elementLength === 0)				if ($diagnose) return self::ISEMAIL_DOMAINEMPTYELEMENT; else return false;	// Dots in wrong place
+	// revision 1.15: Speed up the test and get rid of "unitialized string offset" notices from PHP
 
 				// Then we need to remove all valid comments (i.e. those at the start or end of the element
-				$elementLength = strlen($element);
-
 				if ($element[0] === '(') {
 					$indexBrace = strpos($element, ')');
 					if ($indexBrace !== false) {
 						if (preg_match('/(?<!\\\\)[\\(\\)]/', substr($element, 1, $indexBrace - 1)) > 0) {
-											return false;	// Illegal characters in comment
+											if ($diagnose) return self::ISEMAIL_BADCOMMENT_START; else return false;	// Illegal characters in comment
 						}
 						$element	= substr($element, $indexBrace + 1, $elementLength - $indexBrace - 1);
 						$elementLength	= strlen($element);
@@ -679,9 +1215,9 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 				if ($element[$elementLength - 1] === ')') {
 					$indexBrace = strrpos($element, '(');
 					if ($indexBrace !== false) {
-						if (preg_match('/(?<!\\\\)(?:[\\(\\)])/', substr($element, $indexBrace + 1, $elementLength - $indexBrace - 2)) > 0) {
-											return false;	// Illegal characters in comment
-						}
+						if (preg_match('/(?<!\\\\)(?:[\\(\\)])/', substr($element, $indexBrace + 1, $elementLength - $indexBrace - 2)) > 0)
+											if ($diagnose) return self::ISEMAIL_BADCOMMENT_END; else return false;	// Illegal characters in comment
+
 						$element	= substr($element, 0, $indexBrace);
 						$elementLength	= strlen($element);
 					}
@@ -698,48 +1234,44 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 				// string of labels each containing up to 63 8-bit octets,
 				// separated by dots, and with a maximum total of 255
 				// octets.
-				//	(http://tools.ietf.org/html/rfc1123#section-6.1.3.5)
-				if ($elementLength > 63)				return false;	// Label must be 63 characters or less
-
-				// Each dot-delimited component must be atext
-				// A zero-length element implies a period at the beginning or end of the
-				// local part, or two periods together. Either way it's not allowed.
-				if ($elementLength === 0)				return false;	// Dots in wrong place
+				// 	(http://tools.ietf.org/html/rfc1123#section-6.1.3.5)
+				if ($elementLength > 63)				if ($diagnose) return self::ISEMAIL_DOMAINELEMENTTOOLONG; else return false;	// Label must be 63 characters or less
 
 				// Any ASCII graphic (printing) character other than the
 				// at-sign ("@"), backslash, double quote, comma, or square brackets may
 				// appear without quoting.  If any of that list of excluded characters
 				// are to appear, they must be quoted
-				//	(http://tools.ietf.org/html/rfc3696#section-3)
+				// 	(http://tools.ietf.org/html/rfc3696#section-3)
 				//
 				// If the hyphen is used, it is not permitted to appear at
 				// either the beginning or end of a label.
-				//	(http://tools.ietf.org/html/rfc3696#section-2)
+				// 	(http://tools.ietf.org/html/rfc3696#section-2)
 				//
 				// Any excluded characters? i.e. 0x00-0x20, (, ), <, >, [, ], :, ;, @, \, comma, period, "
 				if (preg_match('/[\\x00-\\x20\\(\\)<>\\[\\]:;@\\\\,\\."]|^-|-$/', $element) > 0) {
-											return false;
+											if ($diagnose) return self::ISEMAIL_DOMAINBADCHAR; else return false;
 				}
 			}
 
-			if ($partLength > 255)						return false;	// Local part must be 64 characters or less
+			if ($partLength > 255) 						if ($diagnose) return self::ISEMAIL_DOMAINTOOLONG; else return false;	// Domain part must be 255 characters or less (http://tools.ietf.org/html/rfc1123#section-6.1.3.5)
 
-			if (preg_match('/^[0-9]+$/', $element) > 0)			return false;	// TLD can't be all-numeric
+			if (preg_match('/^[0-9]+$/', $element) > 0)			if ($diagnose) return self::ISEMAIL_TLDNUMERIC; else return false;	// TLD can't be all-numeric (http://www.apps.ietf.org/rfc/rfc3696.html#sec-2)
 
 			// Check DNS?
 			if ($checkDNS && function_exists('checkdnsrr')) {
 				if (!(checkdnsrr($domain, 'A') || checkdnsrr($domain, 'MX'))) {
-											return false;	// Domain doesn't actually exist
+											if ($diagnose) return self::ISEMAIL_DOMAINNOTFOUND; else return false;	// Domain doesn't actually exist
 				}
 			}
 		}
 
 		// Eliminate all other factors, and the one which remains must be the truth.
-		//	(Sherlock Holmes, The Sign of Four)
-		return true;
+		// 	(Sherlock Holmes, The Sign of Four)
+		if ($diagnose) return self::ISEMAIL_VALID; else return true;
 	}
 }
 // End of class ezUser_common
+
 
 /**
  * Password reset handling for ezUser
@@ -795,6 +1327,7 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 }
 // End of class ezUser_reset
 
+
 /**
  * This class encapsulates all the functions needed for an app to interact
  * with a user. It has no knowledge of how user information is persisted.
@@ -805,6 +1338,7 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 		// REST interface actions
 	const	ACTION			= 'action',
 		ACTION_ABOUT		= 'about',
+		ACTION_ABOUTTEXT	= 'abouttext',
 		ACTION_ACCOUNT		= 'account',
 		ACTION_ACCOUNTFORM	= 'accountform',
 		ACTION_ACCOUNTWIZARD	= 'accountwizard',
@@ -863,10 +1397,7 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 		RESULT_BADPASSWORD	= 3,
 		RESULT_UNKNOWNACTION	= 4,
 		RESULT_NOACTION		= 5,
-		RESULT_NOSESSION	= 6,
-		RESULT_NOSESSIONCOOKIES	= 7,
-		RESULT_STORAGEERR	= 8,
-		RESULT_EMAILERR		= 9,
+		RESULT_FAILEDAUTOSIGNIN	= 6,
 
 		// Validation result codes
 		RESULT_VALIDATED	= 32,
@@ -883,6 +1414,13 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 		RESULT_EMAILEXISTS	= 43,
 		RESULT_NOTSIGNEDIN	= 44,
 		RESULT_INCOMPLETE	= 45,
+
+		// Result codes for session and environment issues
+		RESULT_NOSESSION	= 64,
+		RESULT_NOSESSIONCOOKIES	= 65,
+		RESULT_STORAGEERR	= 66,
+		RESULT_EMAILERR		= 67,
+		RESULT_HEADERSSENT	= 68,
 
 		// Miscellaneous constants
 		DELIMITER_SPACE		= ' ',
@@ -944,6 +1482,7 @@ class ezUser_base extends ezUser_common implements I_ezUser_base {
 	private		$config			= /*.(array[string]string).*/	array();	// Configuration settings
 	private		$errors			= /*.(array[string]string).*/	array();	// Validation errors
 	private		$signOutActions		= /*.(array[int]string).*/	array();	// Things to do on signing out
+	private		$manualSignOut		= false;					// User chose to sign out
 
 // ---------------------------------------------------------------------------
 // Helper methods
@@ -979,18 +1518,27 @@ class ezUser_base extends ezUser_common implements I_ezUser_base {
 	}
 
 // ---------------------------------------------------------------------------
-// Substantive methods
+// Authenticate
 // ---------------------------------------------------------------------------
 	public /*.int.*/ function authenticate($passwordHash = '') {
 		if (empty($passwordHash)) {
 			// Sign out
-			$this->authenticated = false;
+			$this->authenticated	= false;
+			$this->manualSignOut	= true;
 			$result = self::RESULT_SUCCESS;
 		} else {
 			// Sign in
+			self::checkSession();
 			$sessionHash = hash(self::HASH_FUNCTION, session_id() . hash(self::HASH_FUNCTION, $_SERVER['REMOTE_ADDR'] . $this->values[self::TAGNAME_PASSWORD]));
+//error_log(date('Y-m-d H:i:s', time()) . "\t" . session_id() . '|' . $_SERVER['REMOTE_ADDR'] . '|' . $this->values[self::TAGNAME_PASSWORD] . '|' . hash(self::HASH_FUNCTION, $_SERVER['REMOTE_ADDR'] . $this->values[self::TAGNAME_PASSWORD]) . "|$sessionHash|$passwordHash\n", 3, dirname(__FILE__) . self::URL_SEPARATOR . '.ezuser-log.php'); // Debug
 			$this->authenticated = ($passwordHash === $sessionHash);
-			$result = ($this->authenticated) ? self::RESULT_SUCCESS : self::RESULT_BADPASSWORD;
+
+			if ($this->authenticated) {
+				$result			= self::RESULT_SUCCESS;
+				$this->manualSignOut	= false;
+			} else {
+				$result			= self::RESULT_BADPASSWORD;
+			}
 		}
 
 		$this->result = $result;
@@ -1016,6 +1564,7 @@ class ezUser_base extends ezUser_common implements I_ezUser_base {
 	protected	/*.array[string]string.*/	function errors()		{return $this->errors;}
 	protected	/*.string.*/			function signOutActions()	{return implode(self::DELIMITER_SPACE, $this->signOutActions);}
 	protected	/*.boolean.*/			function isChanged()		{return $this->isChanged;}
+	protected	/*.boolean.*/			function manualSignOut()	{return $this->manualSignOut;}
 	protected	/*.boolean.*/			function incomplete() {
 		return	(	empty($this->values[self::TAGNAME_USERNAME])	||
 				empty($this->values[self::TAGNAME_EMAIL])	||
@@ -1100,7 +1649,7 @@ class ezUser_base extends ezUser_common implements I_ezUser_base {
 	protected /*.int.*/ function setEmail(/*.string.*/ $email) {
 		if (empty($email)) return self::RESULT_NOEMAIL;
 
-		if (!self::is_email($email)) {
+		if (!(boolean) self::is_email($email)) {
 			$this->errors[self::TAGNAME_EMAIL] = $email;
 			return self::RESULT_EMAILFORMATERR;
 		}
@@ -1153,6 +1702,7 @@ class ezUser_base extends ezUser_common implements I_ezUser_base {
 }
 // End of class ezUser_base
 
+
 /**
  * This class encapsulates all the functions needed to manage the collection
  * of stored users. It interacts with the storage mechanism (e.g. database or
@@ -1162,13 +1712,14 @@ class ezUser_base extends ezUser_common implements I_ezUser_base {
  */
 interface I_ezUser_environment extends I_ezUser_base {
 		// Cookie names
-	const	COOKIE_USERNAME		= 'ezuser1',
-		COOKIE_PASSWORD		= 'ezuser2',
-		COOKIE_AUTOSIGN		= 'ezuser3',
+	const	COOKIE_USERNAME		= 'ezuser-1',
+		COOKIE_PASSWORD		= 'ezuser-2',
+		COOKIE_AUTOSIGN		= 'ezuser-3',
 
 		// Storage locations
 		STORAGE			= '.ezuser-data.php',
 		SETTINGS		= '.ezuser-settings.php',
+		LOG			= '.ezuser-log.php',
 
 		// Keys for the configuration settings
 		SETTINGS_ADMINEMAIL	= 'adminEmail',
@@ -1180,9 +1731,10 @@ interface I_ezUser_environment extends I_ezUser_base {
 		// Miscellaneous constants
 		DELIMITER_EMAIL		= '@';
 
-	public static /*.ezUser_base.*/ function getSessionObject($instance = self::PACKAGE);
-	public static /*.ezUser_base.*/ function save(/*.array[string]mixed.*/ $userData);
-	public static /*.ezUser_base.*/ function lookup($needle = '', $tagName = '');
+	public static /*.ezUser_base.*/ function lookup			($needle = '', $tagName = '');
+//-	public static /*.ezUser_base.*/ function getSessionObject	($instance = 'ezuser');
+	public static /*.ezUser_base.*/ function save			(/*.array[string]mixed.*/ $userData);
+	public static /*.ezUser_base.*/	function signIn			($userData = /*.(array[string]mixed).*/ array());
 }
 
 /**
@@ -1192,27 +1744,316 @@ interface I_ezUser_environment extends I_ezUser_base {
  *
  * @package ezUser
  */
-class ezUser_environment extends ezUser_base implements I_ezUser_environment {
+abstract class ezUser_environment extends ezUser_base implements I_ezUser_environment {
+
 // ---------------------------------------------------------------------------
-// Configuration settings
+// Helper methods
 // ---------------------------------------------------------------------------
-	protected static /*.string.*/ function getInstanceId($container = self::PACKAGE) {
-		return ($container === self::ACTION_MAIN || $container === self::PACKAGE) ? self::getPackage() : self::getPackage() . "-$container";
+	protected static /*.boolean.*/ function logMessage($message = 'Unknown') {
+		$filename = dirname(__FILE__) . self::URL_SEPARATOR . self::LOG;
+		$logWhen	= date('Y-m-d H:i:s', time());
+		return error_log("$logWhen\t$message\n", 3, $filename);
 	}
 
-	public static /*.ezUser_base.*/ function getSessionObject($instance = self::PACKAGE) {
+	private static /*.DOMDocument.*/ function openStorage() {
+		// Connect to database or whatever our storage mechanism is in this version
+
+		// Where is the storage container?
+		$storage_file = realpath(dirname(__FILE__)) . self::URL_SEPARATOR . self::STORAGE;
+
+		// If storage container doesn't exist then create it
+		if (!is_file($storage_file)) {
+			$query = '?';
+			$html = <<<HTML
+<?php header("Location: /"); $query>
+<users>
+</users>
+HTML;
+
+			$handle = @fopen($storage_file, 'wb');
+			if (is_bool($handle)) exit(self::RESULT_STORAGEERR);
+			fwrite($handle, $html);
+			fclose($handle);
+			chmod($storage_file, 0600);
+		}
+
+		// Open the container for use
+		$storage = new DOMDocument();
+		$storage->load($storage_file);
+
+		return $storage;
+	}
+
+// ---------------------------------------------------------------------------
+	private static /*.void.*/ function closeStorage(DOMDocument $storage) {
+		$storage_file = dirname(__FILE__) . self::URL_SEPARATOR . self::STORAGE;
+
+		for ($attempt = 0; $attempt < 3; $attempt++) {
+			$count = @$storage->save($storage_file);
+			if ((bool) $count) break;
+			sleep(1); // File may occasionally be locked by indexing/backups etc.
+		}
+}
+
+// ---------------------------------------------------------------------------
+	private static /*.DOMElement.*/ function findUser(DOMDocument $storage, $needle = '', $tagName = '') {
+		if ($needle === '') return $storage->createElement(self::TAGNAME_USER);
+
+		if ($tagName === '') $tagName = ((bool) strpos($needle,self::DELIMITER_EMAIL)) ? self::TAGNAME_EMAIL : self::TAGNAME_USERNAME;
+
+		$nodeList	= $storage->getElementsByTagName($tagName);
+		$found		= false;
+
+		for ($i = 0; $i < $nodeList->length; $i++) {
+			$node	= $nodeList->item($i);
+			$found	= (strcasecmp($node->nodeValue, $needle) === 0);
+			if ($found) break;
+		}
+
+
+		if ($found && isset($node)) {
+			/*.object.*/ $userElement_PHPLint = $node->parentNode;	// PHPLint-compliant typecasting (yawn)
+			$userElement = /*.(DOMElement).*/ $userElement_PHPLint;
+			return $userElement;
+		} else {
+			return $storage->createElement(self::TAGNAME_USER);
+		}
+	}
+
+// ---------------------------------------------------------------------------
+	public static /*.ezUser_base.*/ function lookup($needle = '', $tagName = '') {
+		$ezUser = new ezUser_base();
+		if ($needle === '') return $ezUser;
+
+		if ($tagName === '' || $tagName === self::TAGNAME_USERNAME || $tagName === self::TAGNAME_EMAIL) {
+			$ezUser->setUsername($needle); // Will get overwritten if we successfully find the user in the database
+		}
+
+		$storage	= self::openStorage();
+		$record		= self::findUser($storage, $needle, $tagName);
+
+		if ($record->hasChildNodes()) {
+			$data = $record->getElementsByTagName(self::TAGNAME_DATA)->item(0)->nodeValue;
+			if (!empty($data)) $ezUser->setData($data);
+
+			$nodeList = $record->getElementsByTagName(self::TAGNAME_RESETDATA);
+
+			if ((bool) $nodeList->length) {
+				$data = $nodeList->item(0)->nodeValue;
+				if (!empty($data)) {
+					$passwordReset = $ezUser->passwordReset();
+					$passwordReset->setData($data);
+				}
+			}
+		}
+
+		return $ezUser;
+	}
+
+// ---------------------------------------------------------------------------
+// Functions for sending stuff to the browser
+// ---------------------------------------------------------------------------
+	protected static /*.void.*/ function sendContent(/*.string.*/ $content, $container = '', $contentType = 'text/html') {
+		// Send headers first
+		if (!headers_sent()) {
+//			$package = 'ezuser';
+			if ($container === '') $container = 'ezuser';
+//header("Container-length: " . strlen($container)); // debug
+			header('Package: ezUser');
+			header("ezUser-container: $container");
+			header("Content-type: $contentType");
+		}
+
+		// Send content
+		echo $content;
+
+/* Comment out profiling statements if not needed
+		// Send profiling data as a comment
+		global $ezuser_profile;
+
+		if (count($ezuser_profile) > 0) {
+			$ezuser_profile['response'] = ezuser_time();
+
+			if ($contentType === 'text/javascript' || $contentType === 'text/css') {
+				$commentStart	= '/' . '*';
+				$commentEnd	= '*' . '/';
+			} else {
+				$commentStart	= '<!--';
+				$commentEnd	= '-->';
+			}
+
+			echo "\n$commentStart\n";
+			$previous = reset($ezuser_profile);
+
+			while (list($key, $value) = each($ezuser_profile)) {
+				$elapsed	= round($value - $previous, 4);
+				$previous	= $value;
+				echo "$key\t$value\t$elapsed\n";
+			}
+			echo "$commentEnd\n";
+		}
+*/
+	}
+
+	protected static /*.string.*/ function resultText(/*.int.*/ $result, $more = '', $sendToBrowser = false) {
+		switch ($result) {
+			// Authentication results
+			case self::RESULT_UNDEFINED:		$text = "Undefined";					break;
+			case self::RESULT_SUCCESS:		$text = "Success";					break;
+			case self::RESULT_UNKNOWNUSER:		$text = "Username not recognised";			break;
+			case self::RESULT_BADPASSWORD:		$text = "Password is wrong";				break;
+			case self::RESULT_UNKNOWNACTION:	$text = "Unrecognised action";				break;
+			case self::RESULT_NOACTION:		$text = "No action specified";				break;
+
+			// Registration and validation results
+			case self::RESULT_VALIDATED:		$text = "Validation was successful";			break;
+			case self::RESULT_NOID:			$text = "ID cannot be blank";				break;
+			case self::RESULT_NOUSERNAME:		$text = "The username cannot be blank";			break;
+			case self::RESULT_NOEMAIL:		$text = "Please provide an email address";		break;
+			case self::RESULT_EMAILFORMATERR:	$text = "Incorrect email address format";		break;
+			case self::RESULT_NOPASSWORD:		$text = "Password hash cannot be blank";		break;
+			case self::RESULT_NULLPASSWORD:		$text = "Password cannot be blank";			break;
+			case self::RESULT_STATUSNAN:		$text = "Status code must be numeric";			break;
+			case self::RESULT_RESULTNAN:		$text = "Result code must be numeric";			break;
+			case self::RESULT_CONFIGNOTARRAY:	$text = "Configuration settings must be an array";	break;
+			case self::RESULT_USERNAMEEXISTS:	$text = "This username already exists";			break;
+			case self::RESULT_EMAILEXISTS:		$text = "Email address is already registered";		break;
+			case self::RESULT_NOTSIGNEDIN:		$text = "You must be signed in to update your account";	break;
+			case self::RESULT_INCOMPLETE:		$text = "Not enough information to update the account";	break;
+
+			// Session and environment issues
+			case self::RESULT_NOSESSION:		$text = "No session data available";			break;
+			case self::RESULT_NOSESSIONCOOKIES:	$text = "Session cookies are not enabled";		break;
+			case self::RESULT_STORAGEERR:		$text = "Error with stored user details";		break;
+			case self::RESULT_EMAILERR:		$text = "Error sending email";				break;
+			case self::RESULT_HEADERSSENT:		$text = "Headers already sent";				break;
+			default:				$text = "Unknown result code";				break;
+		}
+
+		if ($more !== '')	$text .= ": $more";
+		if ($sendToBrowser)	{self::sendContent($text); return '';} else return $text;
+	}
+
+// ---------------------------------------------------------------------------
+// Sign-in and session variables
+// ---------------------------------------------------------------------------
+	protected static /*.string.*/ function getInstanceId($container = 'ezuser') {
+		return ($container === self::ACTION_MAIN || $container === 'ezuser') ? 'ezuser' : "ezuser-$container";
+	}
+
+	protected static /*.void.*/ function setSessionObject(ezUser_base $ezUser, $instance = 'ezuser') {
+		self::checkSession();
 		$instanceId = self::getInstanceId($instance);
-		if (!array_key_exists($instanceId, $_SESSION)) $_SESSION[$instanceId] = new ezUser_base();
+		$_SESSION[$instanceId] = $ezUser;
+
+/*
+$debug_isset		= (isset($_SESSION))										? 'true' : 'false'; // debug
+$debug_isarray		= ((isset($_SESSION)) && (is_array($_SESSION)))							? 'true' : 'false'; // debug
+$debug_keyexists	= ((isset($_SESSION)) && (is_array($_SESSION)) && (array_key_exists($instanceId, $_SESSION)))	? 'true' : 'false'; // debug
+$debug_result		= ((isset($_SESSION)) && (is_array($_SESSION)) && (array_key_exists($instanceId, $_SESSION)))	? $_SESSION[$instanceId]->result() : 'n/a'; // debug
+self::logMessage("setSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is array: $debug_isarray|\$instanceId = $instanceId|array key exists: $debug_keyexists|result = $debug_result|session_id = " . session_id()); // debug
+*/
+	}
+
+	private static /*.boolean.*/ function autoSignInAvailable(){
+		return	(
+			array_key_exists(self::COOKIE_AUTOSIGN, $_COOKIE)	&&
+			array_key_exists(self::COOKIE_USERNAME, $_COOKIE)	&&
+			($_COOKIE[self::COOKIE_AUTOSIGN] === self::STRING_TRUE)	&&
+			($_COOKIE[self::COOKIE_USERNAME] !== '')
+			);
+	}
+
+	public static /*.ezUser_base.*/ function signIn($userData = /*.(array[string]mixed).*/ array()) {
+		$autoSignInRequest	= (count($userData) === 0);
+		$logEntry		= 'Sign in';
+
+		if ($autoSignInRequest) {
+			if (self::autoSignInAvailable()) {
+				$userData[self::COOKIE_USERNAME]	= (string) $_COOKIE[self::COOKIE_USERNAME];
+				$userData[self::COOKIE_PASSWORD]	= hash(self::HASH_FUNCTION, session_id() . (string) $_COOKIE[self::COOKIE_PASSWORD]);
+				$logEntry				.= '|auto';
+			} else {
+				$userData[self::COOKIE_USERNAME]	= '';
+				$userData[self::COOKIE_PASSWORD]	= '';
+				$logEntry				.= '|auto not available';
+//-				return;
+			}
+		} else {
+			$logEntry				.= '|manual';
+		}
+
+		$username	= (string) $userData[self::COOKIE_USERNAME];
+		$password	= (string) $userData[self::COOKIE_PASSWORD];
+		$logEntry	.= "|$username|$password";
+
+		if ($username === '') {
+			$ezUser		= new ezUser_base();
+		} else {
+			$ezUser		= self::lookup($username);
+
+			if ($ezUser->status() === self::STATUS_UNKNOWN) {
+				$ezUser->setResult(($autoSignInRequest) ? self::RESULT_FAILEDAUTOSIGNIN : self::RESULT_UNKNOWNUSER);
+			} else {
+				$ezUser->authenticate($password); // Sets result itself
+			}
+		}
+
+//-		$ezUser		= (($username === '') || ($password === '')) ? new ezUser_base() : self::lookup($username);
+//-
+//-		if ($ezUser->status() === self::STATUS_UNKNOWN) {
+//-			$ezUser->setResult(($autoSignInRequest) ? self::RESULT_FAILEDAUTOSIGNIN : self::RESULT_UNKNOWNUSER);
+//-		} else {
+//-			$ezUser->authenticate($password); // Sets result itself
+//-		}
+
+		self::setSessionObject($ezUser);
+		self::logMessage($logEntry . '|' . $ezUser->result());
+		return $ezUser;
+//-		if (!$autoSignInRequest) self::htmlControlPanel('', true);
+	}
+
+	protected static /*.ezUser_base.*/ function getSessionObject($instance = 'ezuser') {
+		$file		= '';
+		$lineInt	= 0;
+
+		// There may already be a session in progress. We will use the existing
+		// session if possible.
+		if ((int) ini_get('session.use_cookies') === 0) {
+			echo self::resultText(self::RESULT_NOSESSIONCOOKIES);
+			die(self::RESULT_NOSESSIONCOOKIES);
+		} else if (headers_sent($file, $lineInt)) {
+			$line = (string) $lineInt;
+			echo self::resultText(self::RESULT_HEADERSSENT, "$file (line $line)");
+			die(self::RESULT_HEADERSSENT);
+		} else {
+			self::checkSession();
+		}
+
+		$instanceId = self::getInstanceId($instance);
+
+/*
+$debug_isset		= (isset($_SESSION))										? 'true' : 'false'; // debug
+$debug_isarray		= ((isset($_SESSION)) && (is_array($_SESSION)))							? 'true' : 'false'; // debug
+$debug_keyexists	= ((isset($_SESSION)) && (is_array($_SESSION)) && (array_key_exists($instanceId, $_SESSION)))	? 'true' : 'false'; // debug
+$debug_result		= ((isset($_SESSION)) && (is_array($_SESSION)) && (array_key_exists($instanceId, $_SESSION)))	? $_SESSION[$instanceId]->result() : 'n/a'; // debug
+self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is array: $debug_isarray|\$instanceId = $instanceId|array key exists: $debug_keyexists|result = $debug_result|session_id = " . session_id()); // debug
+*/
+
+		if	(!array_key_exists($instanceId, $_SESSION))	$_SESSION[$instanceId] = self::signIn(); // Returns ezUser object, signed in if possible
+		if	(
+			!$_SESSION[$instanceId]->authenticated() &&
+			!$_SESSION[$instanceId]->manualSignOut() &&
+			self::autoSignInAvailable()
+			)						$_SESSION[$instanceId] = self::signIn(); // Returns ezUser object, signed in if possible
 		return /*.(ezUser_base).*/ $_SESSION[$instanceId];
 	}
 
-	protected static /*.void.*/ function setSessionObject(/*.ezUser_base.*/ $ezUser, $instance = self::PACKAGE) {
-		$instanceId = self::getInstanceId($instance);
-		$_SESSION[$instanceId] = $ezUser;
-	}
-
+// ---------------------------------------------------------------------------
+// Configuration settings
+// ---------------------------------------------------------------------------
 	protected static /*.string.*/ function thisURL() {
-		return self::getURL(self::URL_MODE_PATH, self::getPackage() . '.php');
+		return self::getURL(self::URL_MODE_PATH, 'ezuser.php');
 	}
 
 	private static /*.array[string]string.*/ function loadConfig() {
@@ -1260,107 +2101,6 @@ class ezUser_environment extends ezUser_base implements I_ezUser_environment {
 
 		return $thisSetting;
 	}
-
-// ---------------------------------------------------------------------------
-// Helper methods
-// ---------------------------------------------------------------------------
-	private static /*.DOMDocument.*/ function openStorage() {
-		// Connect to database or whatever our storage mechanism is in this version
-
-		// Where is the storage container?
-		$storage_file = realpath(dirname(__FILE__)) . self::URL_SEPARATOR . self::STORAGE;
-
-		// If storage container doesn't exist then create it
-		if (!is_file($storage_file)) {
-			$query = '?';
-			$html = <<<HTML
-<?php header("Location: /"); $query>
-<users>
-</users>
-HTML;
-
-			$handle = @fopen($storage_file, 'wb');
-			if ($handle === false) exit(self::RESULT_STORAGEERR);
-			fwrite($handle, $html);
-			fclose($handle);
-			chmod($storage_file, 0600);
-		}
-
-		// Open the container for use
-		$storage = new DOMDocument();
-		$storage->load($storage_file);
-
-		return $storage;
-	}
-
-// ---------------------------------------------------------------------------
-	private static /*.void.*/ function closeStorage(/*.DOMDocument.*/ $storage) {
-		$storage_file = dirname(__FILE__) . self::URL_SEPARATOR . self::STORAGE;
-
-		for ($attempt = 0; $attempt < 3; $attempt++) {
-			$count = @$storage->save($storage_file);
-			if ((bool) $count) break;
-			sleep(1); // File may occasionally be locked by indexing/backups etc.
-		}
-}
-
-// ---------------------------------------------------------------------------
-	private static /*.DOMElement.*/ function findUser(/*.DOMDocument.*/ $storage, $needle = '', $tagName = '') {
-		if ($needle === '') return $storage->createElement(self::TAGNAME_USER);
-
-		if ($tagName === '') $tagName = ((bool) strpos($needle,self::DELIMITER_EMAIL)) ? self::TAGNAME_EMAIL : self::TAGNAME_USERNAME;
-
-		$nodeList	= $storage->getElementsByTagName($tagName);
-		$found		= false;
-
-		for ($i = 0; $i < $nodeList->length; $i++) {
-			$node	= $nodeList->item($i);
-			$found	= (strcasecmp($node->nodeValue, $needle) === 0);
-			if ($found) break;
-		}
-
-
-		if ($found && isset($node)) {
-			/*.object.*/ $userElement_PHPLint = $node->parentNode;	// PHPLint-compliant typecasting (yawn)
-			$userElement = /*.(DOMElement).*/ $userElement_PHPLint;
-			return $userElement;
-		} else {
-			return $storage->createElement(self::TAGNAME_USER);
-		}
-	}
-
-// ---------------------------------------------------------------------------
-// Substantive methods
-// ---------------------------------------------------------------------------
-	public static /*.ezUser_base.*/ function lookup($needle = '', $tagName = '') {
-		$ezUser = new ezUser_base();
-		if ($needle === '') return $ezUser;
-
-		if ($tagName === '' || $tagName === self::TAGNAME_USERNAME || $tagName === self::TAGNAME_EMAIL) {
-			$ezUser->setUsername($needle); // Will get overwritten if we successfully find the user in the database
-		}
-
-		$storage	= self::openStorage();
-		$record		= self::findUser($storage, $needle, $tagName);
-
-		if ($record->hasChildNodes()) {
-			$data = $record->getElementsByTagName(self::TAGNAME_DATA)->item(0)->nodeValue;
-			if (!empty($data)) $ezUser->setData($data);
-
-			$nodeList = $record->getElementsByTagName(self::TAGNAME_RESETDATA);
-
-			if ((bool) $nodeList->length) {
-				$data = $nodeList->item(0)->nodeValue;
-				if (!empty($data)) {
-					$passwordReset = $ezUser->passwordReset();
-					$passwordReset->setData($data);
-				}
-			}
-		}
-
-		return $ezUser;
-	}
-
 // ---------------------------------------------------------------------------
 	private static /*.boolean.*/ function sendEmail($to = '', $subject = '', $message = '', $additional_headers = '') {
 		if ($to === '')			return false;	// Can't send to an empty address
@@ -1380,14 +2120,18 @@ HTML;
 		$additional_headers .= "From: $from\r\n";
 
 		date_default_timezone_set(@date_default_timezone_get());	// E_STRICT needs this or it complains about the mail function
-//		return @mail($to, $subject, $message, $additional_headers);
 
+		// Try three times to send the mail
+		$success = false;
 
-ob_start(); // debug
-		return mail($to, $subject, $message, $additional_headers); // debug
-$ob = ob_get_clean(); // debug
-echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
+		for ($i = 0; $i < 3; $i++) {
+			if ($i > 0) self::logMessage('Failed to send email, retrying');
+			$success = @mail($to, $subject, $message, $additional_headers);
+			if ($success) break;
+		}
 
+		if (!$success) self::logMessage('Failed to send email');
+		return $success;
 	}
 
 // ---------------------------------------------------------------------------
@@ -1401,12 +2145,12 @@ echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
 // ---------------------------------------------------------------------------
 //	Storage methods
 // ---------------------------------------------------------------------------
-	private static /*.void.*/ function addElement (/*.DOMDocument.*/ $storage, /*.DOMElement.*/ $record, /*.string.*/ $tagName, /*.string.*/ $value) {
+	private static /*.void.*/ function addElement (DOMDocument $storage, DOMElement $record, /*.string.*/ $tagName, /*.string.*/ $value) {
 		$record->appendChild($storage->createTextNode("\n\t\t")); // XML formatting
 		$record->appendChild($storage->createElement($tagName, $value));
 	}
 
-	private static /*.DOMElement.*/ function createRecord(/*.DOMDocument.*/ $storage, /*.ezUser_base.*/ $ezUser) {
+	private static /*.DOMElement.*/ function createRecord(DOMDocument $storage, ezUser_base $ezUser) {
 		$record = $storage->createElement(self::TAGNAME_USER);
 		self::addElement($storage, $record, self::TAGNAME_USERNAME,	$ezUser->username());			// Add username
 		self::addElement($storage, $record, self::TAGNAME_EMAIL,	$ezUser->email());				// Add email address
@@ -1433,7 +2177,7 @@ echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
 	}
 
 // ---------------------------------------------------------------------------
-	private static /*.int.*/ function add(/*.ezUser_base.*/ $ezUser) {
+	private static /*.int.*/ function add(ezUser_base $ezUser) {
 		$storage	= self::openStorage();
 		$record		= self::createRecord($storage, $ezUser);
 
@@ -1447,7 +2191,7 @@ echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
 	}
 
 // ---------------------------------------------------------------------------
-	private static /*.int.*/ function update(/*.ezUser_base.*/ $ezUser) {
+	private static /*.int.*/ function update(ezUser_base $ezUser) {
 		$storage	= self::openStorage();
 		$oldRecord	= self::findUser($storage, $ezUser->id(), self::TAGNAME_ID);
 
@@ -1469,7 +2213,7 @@ echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
 		if ($ezUser->status() !== self::STATUS_PENDING) return false;	// Only send confirmation email to users who are pending verification
 
 		// Message - SMTP needs CRLF not a bare LF (http://cr.yp.to/docs/smtplf.html)
-		$URL		= self::getURL(self::URL_MODE_ALL, self::getPackage() . '.php');
+		$URL		= self::getURL(self::URL_MODE_ALL, 'ezuser.php');
 		$host		= self::getURL(self::URL_MODE_HOST);
 		$message	= "Somebody calling themselves " . $ezUser->fullName() . " created an account at $host using this email address.\r\n";
 		$message	.= "If it was you please click on the following link to verify the account.\r\n\r\n";
@@ -1480,7 +2224,7 @@ echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
 		return self::sendEmail($ezUser->email(), 'New account confirmation', $message);
 	}
 
-	protected static /*.void.*/ function verify_update(/*.ezUser_base.*/ $ezUser, /*.string.*/ $verificationKey) {
+	protected static /*.void.*/ function verify_update(ezUser_base $ezUser, /*.string.*/ $verificationKey) {
 		if ($ezUser->status() === self::STATUS_PENDING && $ezUser->verificationKey() === $verificationKey) {
 			$ezUser->setStatus(self::STATUS_CONFIRMED);
 			self::update($ezUser);
@@ -1632,11 +2376,11 @@ echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
 // ---------------------------------------------------------------------------
 //	Password reset handling
 // ---------------------------------------------------------------------------
-	private static /*.boolean.*/ function passwordReset_notify(/*.ezUser_base.*/ $ezUser) {
+	private static /*.boolean.*/ function passwordReset_notify(ezUser_base $ezUser) {
 		$passwordReset = $ezUser->passwordReset();
 
 		// Message
-		$URL		= self::getURL(self::URL_MODE_ALL, self::getPackage() . '.php');
+		$URL		= self::getURL(self::URL_MODE_ALL, 'ezuser.php');
 		$host		= self::getURL(self::URL_MODE_HOST);
 		$message	= "A password reset was requested for an account at $host using this email address.\r\n";
 		$message	.= "If you want to reset your password please click on the following link.\r\n\r\n";
@@ -1655,7 +2399,7 @@ echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
 		return ((bool) self::update($ezUser)) ? self::passwordReset_notify($ezUser) : false;
 	}
 
-	protected static /*.void.*/ function passwordReset_update(/*.ezUser_base.*/ $ezUser, /*.string.*/$passwordHash) {
+	protected static /*.void.*/ function passwordReset_update(ezUser_base $ezUser, /*.string.*/$passwordHash) {
 		if ($ezUser->hasPasswordReset()) {
 			$ezUser->setPasswordHash($passwordHash);
 			$ezUser->passwordReset(true); // Clear password reset data
@@ -1664,6 +2408,7 @@ echo "&#65533;&#65533;$ob&#65533;&#65533;"; // debug
 	}
 }
 // End of class ezUser_environment
+
 
 /**
  * This class manages the HTML, CSS and Javascript that you can include in
@@ -1708,17 +2453,17 @@ interface I_ezUser extends I_ezUser_environment {
 //	public static /*.void.*/	function getStatusDescription	(/*.int.*/ $status, $more = '');
 //	public static /*.void.*/	function getResultDescription	(/*.int.*/ $result, $more = '');
 	public static /*.void.*/	function getResultForm		(/*.int.*/ $result, $more = '');
-	public static /*.void.*/	function fatalError		(/*.int.*/ $result, $more = '');
+//	public static /*.void.*/	function fatalError		(/*.int.*/ $result, $more = '');
 	public static /*.void.*/	function getAccountForm		($mode = '', $newUser = false);
 //	public static /*.void.*/	function getDashboard		();
 //	public static /*.void.*/	function getSignInForm		();
-//	public static /*.void.*/	function getControlPanel	($username = '');
+	public static /*.void.*/	function getControlPanel	($username = '');
 //	public static /*.void.*/	function getStyleSheet		();
 //	public static /*.void.*/	function getJavascript		($containerList = '');
 	public static /*.void.*/	function getContainer		($action = self::ACTION_MAIN);
 	public static /*.void.*/	function getAbout		();
+	public static /*.void.*/	function getAboutText		();
 //	public static /*.void.*/	function getSourceCode		();
-	public static /*.void.*/	function signIn			($userData = /*.(array[string]mixed).*/ array());
 }
 
 /**
@@ -1728,67 +2473,20 @@ interface I_ezUser extends I_ezUser_environment {
  * @package ezUser
  */
 class ezUser extends ezUser_environment implements I_ezUser {
-// ---------------------------------------------------------------------------
-// Functions for sending stuff to the browser
-// ---------------------------------------------------------------------------
-	private static /*.string.*/ function containerHeader() {return self::getPackage() . '-container';}
-
-	private static /*.void.*/ function sendContent(/*.string.*/ $content, $container = '', $contentType = 'text/html') {
-		// Send headers first
-		if (!headers_sent()) {
-			$package = self::getPackage();
-			if ($container === '') $container = $package;
-header("Container-length: " . strlen($container)); // debug
-			header("Package: $package");
-			header(self::containerHeader() . ": $container");
-			header("Content-type: $contentType");
-		}
-
-		// Send content
-		echo $content;
-
-/* Comment out profiling statements if not needed
-		// Send profiling data as a comment
-		global $ezUser_profile;
-
-		if (count($ezUser_profile) > 0) {
-			$ezUser_profile['response'] = ezUser_time();
-
-			if ($contentType === 'text/javascript' || $contentType === 'text/css') {
-				$commentStart	= '/' . '*';
-				$commentEnd	= '*' . '/';
-			} else {
-				$commentStart	= '<!--';
-				$commentEnd	= '-->';
-			}
-
-			echo "\n$commentStart\n";
-			$previous = reset($ezUser_profile);
-
-			while (list($key, $value) = each($ezUser_profile)) {
-				$elapsed	= round($value - $previous, 4);
-				$previous	= $value;
-				echo "$key\t$value\t$elapsed\n";
-			}
-			echo "$commentEnd\n";
-		}
-*/
-	}
-
 	private static /*.string.*/ function getXML($html = '', $container = '') {
-		$package = self::getPackage();
-		if (is_numeric($container) || $container === '') $container = $package; // If passed to sendXML as an array
-		return "<$package container=\"$container\"><![CDATA[$html]]></$package>";
+//-		$package = 'ezuser';
+		if (is_numeric($container) || $container === '') $container = 'ezuser'; // If passed to sendXML as an array
+		return "<ezuser container=\"$container\"><![CDATA[$html]]></ezuser>";
 	}
 
 	private static /*.void.*/ function sendXML(/*.mixed.*/ $content = '', $container = '') {
 		if (is_array($content)) {
 			// Expected array format is $content['container'] = '<html>'
-			$package	= self::getPackage();
+//-			$package	= self::getPackage();
 			$contentArray	= /*.(array[]string).*/ $content;
-			$xmlArray	= /*.(array[]string).*/ array_map('ezUser::getXML', $contentArray, array_keys($contentArray)); // wrap each element
+			$xmlArray	= /*.(array[]string).*/ array_map('self::getXML', $contentArray, array_keys($contentArray)); // wrap each element
 			$xml		= implode('', $xmlArray);
-			$xml		= "<$package>$xml</$package>";
+			$xml		= "<ezuser>$xml</ezuser>";
 
 		} else {
 			$xml = self::getXML((string) $content, $container);
@@ -1801,7 +2499,8 @@ header("Container-length: " . strlen($container)); // debug
 // Functions that build common HTML fragments
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlPage($body = '', $title = '', $sendToBrowser = false) {
-		$package	= self::getPackage();
+//-		$package	= self::getPackage();
+//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$URL		= self::thisURL();
 		$actionJs	= self::ACTION_JAVASCRIPT;
 		$actionCSS	= self::ACTION_STYLESHEET;
@@ -1814,10 +2513,10 @@ header("Container-length: " . strlen($container)); // debug
 	<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
 	<title>$title</title>
 	<script src="$URL?$actionJs"></script>
-	<link type="text/css" rel="stylesheet" href="$URL?$actionCSS" title="$package">
+	<link type="text/css" rel="stylesheet" href="$URL?$actionCSS" title="ezUser">
 </head>
 
-<body class="$package">
+<body class="ezuser">
 $body
 </body>
 
@@ -1828,7 +2527,8 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlContainer($action = self::ACTION_MAIN, $sendToBrowser = false) {
-		$package	= self::getPackage();
+//-		$package	= self::getPackage();
+//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$baseAction	= explode('=', $action);
 		$container	= self::getInstanceId($baseAction[0]);
 		$actionCommand	= self::ACTION;
@@ -1838,33 +2538,35 @@ HTML;
 		$html = <<<HTML
 	<div id="$container"></div>
 	<script type="text/javascript">document.write(unescape('%3Cscript src="$URL?$actionCommand=$actionJs"%3E%3C/script%3E'));</script>
-	<script type="text/javascript">$package.ajax.execute('$action');</script>
+	<script type="text/javascript">ezUser.ajax.execute('$action');</script>
 HTML;
 
 		if ($sendToBrowser) {self::sendContent($html); return '';} else return $html;
 	}
 
 	private static /*.string.*/ function htmlInputText($styleFloat = self::STRING_RIGHT) {
-		$package	= self::getPackage();
-		$onKeyUp	= $package . '.keyUp';
+//-		$package	= self::getPackage();
+//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
+		$onKeyUp	= 'ezUser.keyUp';
 
 		return <<<HTML
-					class		=	"$package-text $package-$styleFloat"
+					class		=	"ezuser-text ezuser-$styleFloat"
 					onkeyup		=	"$onKeyUp(event)"
 					size		=	"40"
 HTML;
 	}
 
 	private static /*.string.*/ function htmlButton(/*.string.*/ $type, $styleFloat = self::STRING_RIGHT, $verbose = false) {
-		$package	= self::getPackage();
-		$classVerbose	= ($verbose) ? " $package-" . self::BUTTON_TYPE_PREFERENCE . '-' . self::TAGNAME_VERBOSE : '';
-		$styleString	= ($type === self::BUTTON_TYPE_HIDDEN) ? "$package-" . self::BUTTON_TYPE_ACTION . " $package-$type" : "$package-$type";
-		$setButtonState	= $package . '.setButtonState';
-		$onClick	= $package . '.click';
+//-		$package	= self::getPackage();
+//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
+		$classVerbose	= ($verbose) ? ' ezuser-' . self::BUTTON_TYPE_PREFERENCE . '-' . self::TAGNAME_VERBOSE : '';
+		$styleString	= ($type === self::BUTTON_TYPE_HIDDEN) ? 'ezuser-' . self::BUTTON_TYPE_ACTION . " ezuser-$type" : "ezuser-$type";
+		$setButtonState	= 'ezUser.setButtonState';
+		$onClick	= 'ezUser.click';
 
 		return <<<HTML
 					type		=	"button"
-					class		=	"$package-button $package-$styleFloat $styleString$classVerbose $package-buttonstate-0"
+					class		=	"ezuser-button ezuser-$styleFloat $styleString$classVerbose ezuser-buttonstate-0"
 					onclick		=	"$onClick(this)"
 					onmouseover	=	"$setButtonState(this, 1, true)"
 					onmouseout	=	"$setButtonState(this, 1, false)"
@@ -1874,14 +2576,15 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlMessage($message = '', $style = self::MESSAGE_STYLE_DEFAULT, $container = '', $type = self::MESSAGE_TYPE_DEFAULT, $styleFloat = self::STRING_RIGHT) {
-		$package	= self::getPackage();
+//-		$package	= self::getPackage();
+//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$style		= ($message === '') ? 'hidden' : $style;
-		$message	= "<p class=\"$package-message-$style\">$message</p>";
-		$id		= ($container === '') ? "$package-$type" : "$container-$type";
-		$onClick	= $package . '.click';
+		$message	= "<p class=\"ezuser-message-$style\">$message</p>";
+		$id		= ($container === '') ? "ezuser-$type" : "$container-$type";
+		$onClick	= 'ezUser.click';
 
 		return <<<HTML
-				<div id="$id" class="$package-$type $package-$styleFloat" onclick="$onClick(this)">$message</div>
+				<div id="$id" class="ezuser-$type ezuser-$styleFloat" onclick="$onClick(this)">$message</div>
 HTML;
 	}
 
@@ -1895,42 +2598,6 @@ HTML;
 			case self::STATUS_CONFIRMED:		$text = "Confirmed and active";				break;
 			case self::STATUS_INACTIVE:		$text = "Inactive";					break;
 			default:				$text = "Unknown status code";				break;
-		}
-
-		if ($more !== '')	$text .= ": $more";
-		if ($sendToBrowser)	{self::sendContent($text); return '';} else return $text;
-	}
-
-	private static /*.string.*/ function resultText(/*.int.*/ $result, $more = '', $sendToBrowser = false) {
-		switch ($result) {
-			// Authentication results
-			case self::RESULT_UNDEFINED:		$text = "Undefined";					break;
-			case self::RESULT_SUCCESS:		$text = "Success";					break;
-			case self::RESULT_UNKNOWNUSER:		$text = "Username not recognised";			break;
-			case self::RESULT_BADPASSWORD:		$text = "Password is wrong";				break;
-			case self::RESULT_UNKNOWNACTION:	$text = "Unrecognised action";				break;
-			case self::RESULT_NOACTION:		$text = "No action specified";				break;
-			case self::RESULT_NOSESSION:		$text = "No session data available";			break;
-			case self::RESULT_NOSESSIONCOOKIES:	$text = "Session cookies are not enabled";		break;
-			case self::RESULT_STORAGEERR:		$text = "Error with stored user details";		break;
-			case self::RESULT_EMAILERR:		$text = "Error sending email";				break;
-
-			// Registration and validation results
-			case self::RESULT_VALIDATED:		$text = "Validation was successful";			break;
-			case self::RESULT_NOID:			$text = "ID cannot be blank";				break;
-			case self::RESULT_NOUSERNAME:		$text = "The username cannot be blank";			break;
-			case self::RESULT_NOEMAIL:		$text = "Please provide an email address";		break;
-			case self::RESULT_EMAILFORMATERR:	$text = "Incorrect email address format";		break;
-			case self::RESULT_NOPASSWORD:		$text = "Password hash cannot be blank";		break;
-			case self::RESULT_NULLPASSWORD:		$text = "Password cannot be blank";			break;
-			case self::RESULT_STATUSNAN:		$text = "Status code must be numeric";			break;
-			case self::RESULT_RESULTNAN:		$text = "Result code must be numeric";			break;
-			case self::RESULT_CONFIGNOTARRAY:	$text = "Configuration settings must be an array";	break;
-			case self::RESULT_USERNAMEEXISTS:	$text = "This username already exists";			break;
-			case self::RESULT_EMAILEXISTS:		$text = "Email address is already registered";		break;
-			case self::RESULT_NOTSIGNEDIN:		$text = "You must be signed in to update your account";	break;
-			case self::RESULT_INCOMPLETE:		$text = "Not enough information to update the account";	break;
-			default:				$text = "Unknown result code";				break;
 		}
 
 		if ($more !== '')	$text .= ": $more";
@@ -2019,16 +2686,17 @@ HTML;
  */
 	private static /*.string.*/ function htmlAccountForm($mode = '', $newUser = false, $wizard = false, $sendToBrowser = false) {
 		/* Comment out profiling statements if not needed
-		global $ezUser_profile;
-		$ezUser_profile[self::ACTION_ACCOUNT . '-start'] = ezUser_time();
+		global $ezuser_profile;
+		$ezuser_profile[self::ACTION_ACCOUNT . '-start'] = ezuser_time();
 		*/
 
-		$package		= self::getPackage();
+//-		$package		= self::getPackage();
+//-		$packageCamel		= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$action			= self::ACTION_ACCOUNT;
 		$actionResend		= self::ACTION_RESEND;
 		$actionValidate		= self::ACTION_VALIDATE;
 		$accountForm		= self::getInstanceId($action);
-		$container		= ($wizard) ? $package : $accountForm;
+		$container		= ($wizard) ? 'ezuser' : $accountForm;
 
 		$tagFirstName		= self::TAGNAME_FIRSTNAME;
 		$tagLastName		= self::TAGNAME_LASTNAME;
@@ -2049,8 +2717,8 @@ HTML;
 		$stringRight		= self::STRING_RIGHT;
 		$htmlButtonAction	= self::htmlButton(self::BUTTON_TYPE_ACTION);
 		$htmlButtonHidden	= self::htmlButton(self::BUTTON_TYPE_HIDDEN);
-		$passwordOnFocus	= $package . '.passwordFocus';
-		$passwordOnBlur		= $package . '.passwordBlur';
+		$passwordOnFocus	= 'ezUser.passwordFocus';
+		$passwordOnBlur		= 'ezUser.passwordBlur';
 		$htmlInputText		= self::htmlInputText();
 		$messageShort		= self::htmlMessage('* reqd', self::MESSAGE_STYLE_PLAIN, $accountForm);
 		$resendButton		= '';
@@ -2098,7 +2766,7 @@ HTML;
 			$buttonText		= 'Register';
 			$buttonAction		= $actionValidate;
 			$disabled		= '';
-			$htmlOtherButton	= "\t\t\t\t<input id=\"$accountForm-$modeCancel\" data-$package-action=\"$action=$modeCancel\" value=\"Cancel\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>\n";
+			$htmlOtherButton	= "\t\t\t\t<input id=\"$accountForm-$modeCancel\" data-ezuser-action=\"$action=$modeCancel\" value=\"Cancel\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>\n";
 			$useSavedPassword	= false;
 			$messageLong		= self::htmlMessage('', self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_TEXT);
 			break;
@@ -2115,7 +2783,7 @@ HTML;
 			$buttonText		= 'Edit';
 			$buttonAction		= "$action=$modeEdit";
 			$disabled		= "\t\t\t\t\tdisabled\t=\t\"disabled\"\r\n";
-			$htmlOtherButton	= "\t\t\t\t<input id=\"$accountForm-$modeNew\" data-$package-action=\"$action=$modeNew\" value=\"New\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>\n";
+			$htmlOtherButton	= "\t\t\t\t<input id=\"$accountForm-$modeNew\" data-ezuser-action=\"$action=$modeNew\" value=\"New\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>\n";
 			$useSavedPassword	= false;
 			$newUser		= false;
 
@@ -2125,7 +2793,7 @@ HTML;
 				$messageLong	= ($status === self::STATUS_CONFIRMED) ? '' : self::statusDescription($status);
 				$messageLong	= self::htmlMessage($messageLong, self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_TEXT);
 
-				if ($status === self::STATUS_PENDING) $resendButton = "\n\t\t\t\t<input id=\"$accountForm-$actionResend\" data-$package-action=\"$actionResend\" value=\"Resend\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>";
+				if ($status === self::STATUS_PENDING) $resendButton = "\n\t\t\t\t<input id=\"$accountForm-$actionResend\" data-ezuser-action=\"$actionResend\" value=\"Resend\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>";
 			} else {
 				// Show result information
 				$messageLong	= self::resultDescription($result);
@@ -2146,7 +2814,7 @@ HTML;
 			$buttonText		= 'OK';
 			$buttonAction		= $actionValidate;
 			$disabled		= '';
-			$htmlOtherButton	= "\t\t\t\t<input id=\"$accountForm-$modeCancel\" data-$package-action=\"$action=$modeCancel\" value=\"Cancel\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>\n";
+			$htmlOtherButton	= "\t\t\t\t<input id=\"$accountForm-$modeCancel\" data-ezuser-action=\"$action=$modeCancel\" value=\"Cancel\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>\n";
 			$useSavedPassword	= $newUser;
 
 			if ($result === self::RESULT_SUCCESS || $result === self::RESULT_UNDEFINED) {
@@ -2182,13 +2850,13 @@ HTML;
 		// Form varies slightly if it's working in wizard mode
 		if ($wizard) {
 			$wizardString	= self::STRING_TRUE;
-			$styleHidden	= " $package-hidden";
+			$styleHidden	= ' ezuser-hidden';
 			$htmlNavigation = <<<HTML
-				<input id="$accountForm-next" data-$package-action="next" value="Next &gt;"
+				<input id="$accountForm-next" data-ezuser-action="next" value="Next &gt;"
 					tabindex	=	"3218"
 $htmlButtonAction
 				/>
-				<input id="$accountForm-back" data-$package-action="back" value="&lt; Back"
+				<input id="$accountForm-back" data-ezuser-action="back" value="&lt; Back"
 					tabindex	=	"3217"
 $htmlButtonHidden
 				/>
@@ -2201,7 +2869,7 @@ HTML;
 
 		// The lower two fieldsets are transposed if we're in wizard mode
 		$messageFieldset = <<<HTML
-			<fieldset id="$accountForm-fieldset-3" class="$package-fieldset$styleHidden">
+			<fieldset id="$accountForm-fieldset-3" class="ezuser-fieldset$styleHidden">
 $messageLong$resendButton
 				<input id="$accountForm-$tagNewUser"		type="hidden" value="$newString" />
 				<input id="$accountForm-$tagWizard"		type="hidden" value="$wizardString" />
@@ -2211,9 +2879,9 @@ $messageLong$resendButton
 HTML;
 
 		$buttonsFieldset = <<<HTML
-			<fieldset class="$package-fieldset">
+			<fieldset class="ezuser-fieldset">
 $messageShort
-				<input id="$accountForm-$buttonId" data-$package-action="$buttonAction" value="$buttonText"
+				<input id="$accountForm-$buttonId" data-ezuser-action="$buttonAction" value="$buttonText"
 					tabindex	=	"3220"
 $htmlButtonAction
 				/>
@@ -2229,38 +2897,39 @@ HTML;
 
 		$html = <<<HTML
 		$modeInfo
-		<form id="$accountForm-form" class="$package-form" onsubmit="return false">
-			<fieldset id="$accountForm-fieldset-1" class="$package-fieldset">
+		<form id="$accountForm-form" class="ezuser-form" onsubmit="return false">
+			<fieldset id="$accountForm-fieldset-1" class="ezuser-fieldset">
 				<input id= "$accountForm-$tagEmail"
 					tabindex	=	"3211"
 					value		=	"$email"
 					type		=	"text"
 $disabled$htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$accountForm-$tagEmail">* Email address:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagEmail">* Email address:</label>
 				<input id= "$accountForm-$tagFirstName"
 					tabindex	=	"3212"
 					value		=	"$firstName"
 					type		=	"text"
 $disabled$htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$accountForm-$tagFirstName">First name:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagFirstName">First name:</label>
 				<input id= "$accountForm-$tagLastName"
 					tabindex	=	"3213"
 					value		=	"$lastName"
 					type		=	"text"
 $disabled$htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$accountForm-$tagLastName">Last name:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagLastName">Last name:</label>
 			</fieldset>
-			<fieldset id="$accountForm-fieldset-2" class="$package-fieldset$styleHidden">
+			<fieldset id="$accountForm-fieldset-2" class="ezuser-fieldset$styleHidden">
 				<input id= "$accountForm-$tagUsername"
 					tabindex	=	"3214"
 					value		=	"$username"
 					type		=	"text"
+					onkeypress	=	"return ezUser.keyPress(event)"
 $disabled$htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$accountForm-$tagUsername">* Username:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagUsername">* Username:</label>
 				<input id= "$accountForm-$tagPassword"
 					tabindex	=	"3215"
 					value		=	"$password"
@@ -2269,7 +2938,7 @@ $disabled$htmlInputText
 					onblur		=	"$passwordOnBlur(this)"
 $disabled$htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$accountForm-$tagPassword">* Password:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagPassword">* Password:</label>
 				<input id= "$accountForm-confirm"
 					tabindex	=	"3216"
 					value		=	"$password"
@@ -2278,13 +2947,13 @@ $disabled$htmlInputText
 					onblur		=	"$passwordOnBlur(this)"
 $disabled$htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$accountForm-$tagConfirm">* Confirm password:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagConfirm">* Confirm password:</label>
 			</fieldset>
 $bottomFieldsets		</form>
 HTML;
 
 		/* Comment out profiling statements if not needed
-		$ezUser_profile[self::ACTION_ACCOUNT . '-end'] = ezUser_time();
+		$ezuser_profile[self::ACTION_ACCOUNT . '-end'] = ezuser_time();
 		*/
 
 		if ($sendToBrowser) {self::sendXML($html, $container); return '';} else return $html;
@@ -2292,7 +2961,7 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlDashboard($sendToBrowser = false) {
-		$package		= self::getPackage();
+//-		$package		= self::getPackage();
 		$action			= self::ACTION_DASHBOARD;
 		$actionSignOut		= self::ACTION_SIGNOUT;
 		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
@@ -2303,19 +2972,19 @@ HTML;
 		$fullName		= $ezUser->fullName();
 
 		$html = <<<HTML
-		<form id="$package-$action-form" class="$package-form" onsubmit="return false">
-			<fieldset class="$package-fieldset">
-				<input id="$package-$actionSignOut" data-$package-action="$actionSignOut" value="Sign out"
+		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset">
+				<input id="ezuser-$actionSignOut" data-ezuser-action="$actionSignOut" value="Sign out"
 					tabindex	=	"3222"
 $htmlButtonPreference
 				/>
-				<input id="$package-$actionAccountForm" data-$package-action="$actionAccountForm" value="My account"
+				<input id="ezuser-$actionAccountForm" data-ezuser-action="$actionAccountForm" value="My account"
 					tabindex	=	"3221"
 $htmlButtonPreference
 				/>
-				<div id="$package-$tagFullName" class="$package-$tagFullName">$fullName</div>
+				<div id="ezuser-$tagFullName" class="ezuser-$tagFullName">$fullName</div>
 			</fieldset>
-			<fieldset class="$package-fieldset">
+			<fieldset class="ezuser-fieldset">
 $message
 			</fieldset>
 		</form>
@@ -2327,8 +2996,9 @@ HTML;
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlSignInForm($username = '', $sendToBrowser = false) {
 		$verbose		= false;	// Set to true to let the user see detailed result information (recommended setting is false)
+//$verbose = true; // debug
 
-		$package		= self::getPackage();
+//-		$package		= self::getPackage();
 		$action			= self::ACTION_SIGNIN;
 		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
 		$actionResetRequest	= self::ACTION_RESETREQUEST;
@@ -2341,8 +3011,8 @@ HTML;
 		$stringRight		= self::STRING_RIGHT;
 		$htmlButtonAction	= self::htmlButton(self::BUTTON_TYPE_ACTION);
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
-		$passwordOnFocus	= $package . '.passwordFocus';
-		$passwordOnBlur		= $package . '.passwordBlur';
+		$passwordOnFocus	= 'ezUser.passwordFocus';
+		$passwordOnBlur		= 'ezUser.passwordBlur';
 		$htmlInputText		= self::htmlInputText();
 		$ezUser			= self::getSessionObject();
 		$result			= $ezUser->result();
@@ -2358,7 +3028,7 @@ HTML;
 			if ($verbose) {
 				$verboseHTML = self::htmlButton(self::BUTTON_TYPE_PREFERENCE, $stringRight, true);
 				$verboseHTML = <<<HTML
-				<input id="$package-$tagVerbose" value="$result"
+				<input id="ezuser-$tagVerbose" value="$result"
 $verboseHTML
 				/>
 HTML;
@@ -2370,16 +3040,16 @@ HTML;
 		$password = '';
 
 		$html = <<<HTML
-		<form id="$package-$action-form" class="$package-form" onsubmit="return false">
-			<fieldset class="$package-fieldset">
-				<input id= "$package-$tagUsername"
+		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset">
+				<input id= "ezuser-$tagUsername"
 					tabindex	=	"3201"
 					value		=	"$username"
 					type		=	"text"
 $htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$package-$tagUsername">Username:</label>
-				<input id= "$package-$tagPassword"
+				<label class="ezuser-label ezuser-$stringRight" for="ezuser-$tagUsername">Username:</label>
+				<input id= "ezuser-$tagPassword"
 					tabindex	=	"3202"
 					value		=	"$password"
 					type		=	"password"
@@ -2387,29 +3057,29 @@ $htmlInputText
 					onblur		=	"$passwordOnBlur(this)"
 $htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$package-$tagPassword">Password:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="ezuser-$tagPassword">Password:</label>
 $verboseHTML			</fieldset>
-			<fieldset class="$package-fieldset">
+			<fieldset class="ezuser-fieldset">
 $message
-				<input id="$package-$actionAccountForm" data-$package-action="$actionAccountForm" value="Register"
+				<input id="ezuser-$actionAccountForm" data-ezuser-action="$actionAccountForm" value="Register"
 					tabindex	=	"3204"
 $htmlButtonAction
 				/>
-				<input id="$package-$action" data-$package-action="$action" value="Sign in"
+				<input id="ezuser-$action" data-ezuser-action="$action" value="Sign in"
 					tabindex	=	"3203"
 $htmlButtonAction
 				/>
 			</fieldset>
-			<fieldset class="$package-fieldset">
-				<input id="$package-$tagStaySignedIn" value="Stay signed in"
+			<fieldset class="ezuser-fieldset">
+				<input id="ezuser-$tagStaySignedIn" value="Stay signed in"
 					tabindex	=	"3207"
 $htmlButtonPreference
 				/>
-				<input id="$package-$tagRememberMe" value="Remember me"
+				<input id="ezuser-$tagRememberMe" value="Remember me"
 					tabindex	=	"3206"
 $htmlButtonPreference
 				/>
-				<input id="$package-$actionResetRequest" data-$package-action="$actionResetRequest" value="Reset password"
+				<input id="ezuser-$actionResetRequest" data-ezuser-action="$actionResetRequest" value="Reset password"
 					tabindex	=	"3205"
 $htmlButtonPreference
 				/>
@@ -2429,7 +3099,7 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlResetRequest ($username = '', $sendToBrowser = false) {
-		$package		= self::getPackage();
+//-		$package		= self::getPackage();
 		$action			= self::ACTION_RESETREQUEST;
 		$actionCancel		= self::ACTION_CANCEL;
 		$actionResetPassword	= self::ACTION_RESETPASSWORD;
@@ -2440,22 +3110,22 @@ HTML;
 		$htmlInputText		= self::htmlInputText($stringLeft);
 
 		$html = <<<HTML
-		<form id="$package-$action-form" class="$package-form" onsubmit="return false">
-			<fieldset class="$package-fieldset-float">
-					<label class="$package-label $package-$stringLeft" for="$package-$tagUsername">Username or email address:</label>
-					<input style="clear:both;" id="$package-$tagUsername"
+		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset-float">
+					<label class="ezuser-label ezuser-$stringLeft" for="ezuser-$tagUsername">Username or email address:</label>
+					<input style="clear:both;" id="ezuser-$tagUsername"
 					tabindex	=	"3241"
 					value		=	"$username"
 					type		=	"text"
 $htmlInputText
 				/>
 			</fieldset>
-			<fieldset class="$package-fieldset">
-				<input id="$package-$actionCancel" data-$package-action="$actionMain" value="Cancel"
+			<fieldset class="ezuser-fieldset">
+				<input id="ezuser-$actionCancel" data-ezuser-action="$actionMain" value="Cancel"
 					tabindex	=	"3243"
 $htmlButtonPreference
 				/>
-				<input id="$package-$actionResetPassword" data-$package-action="$actionResetPassword" value="Reset password"
+				<input id="ezuser-$actionResetPassword" data-ezuser-action="$actionResetPassword" value="Reset password"
 					tabindex	=	"3242"
 $htmlButtonPreference
 				/>
@@ -2478,8 +3148,8 @@ HTML;
  *
  * @param boolean $sendToBrowser
  */
-	private static /*.string.*/ function htmlResetPassword (/*.ezUser_base.*/ $ezUser, $sendToBrowser = false) {
-		$package		= self::getPackage();
+	private static /*.string.*/ function htmlResetPassword (ezUser_base $ezUser, $sendToBrowser = false) {
+//-		$package		= self::getPackage();
 		$action			= self::ACTION_RESET;
 		$tagPassword		= self::TAGNAME_PASSWORD;
 		$tagConfirm		= self::TAGNAME_CONFIRM;
@@ -2487,17 +3157,17 @@ HTML;
 		$htmlInputText		= self::htmlInputText();
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_ACTION);
 		$stringRight		= self::STRING_RIGHT;
-		$passwordOnFocus	= $package . '.passwordFocus';
-		$passwordOnBlur		= $package . '.passwordBlur';
+		$passwordOnFocus	= 'ezUser.passwordFocus';
+		$passwordOnBlur		= 'ezUser.passwordBlur';
 		$fullName		= $ezUser->fullName();
-		$message		= self::htmlMessage('', self::MESSAGE_STYLE_PLAIN, $package, self::MESSAGE_TYPE_TEXT);
+		$message		= self::htmlMessage('', self::MESSAGE_STYLE_PLAIN, 'ezuser', self::MESSAGE_TYPE_TEXT);
 
 		$html = <<<HTML
-	<div id="$package">
-		<h4 class="$package-heading">Welcome $fullName</h4>
-		<p class="$package-message-plain">Please enter a new password for your account:</p>
-		<form id="$container-form" class="$package-form" onsubmit="return false">
-			<fieldset class="$package-fieldset">
+	<div id="ezuser">
+		<h4 class="ezuser-heading">Welcome $fullName</h4>
+		<p class="ezuser-message-plain">Please enter a new password for your account:</p>
+		<form id="$container-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset">
 				<input id= "$container-$tagPassword"
 					tabindex	=	"3241"
 					value		=	""
@@ -2506,7 +3176,7 @@ HTML;
 					onblur		=	"$passwordOnBlur(this)"
 $htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$container-$tagPassword">Password:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="$container-$tagPassword">Password:</label>
 				<input id= "$container-confirm"
 					tabindex	=	"3242"
 					value		=	""
@@ -2515,15 +3185,15 @@ $htmlInputText
 					onblur		=	"$passwordOnBlur(this)"
 $htmlInputText
 				/>
-				<label class="$package-label $package-$stringRight" for="$container-$tagConfirm">Confirm password:</label>
+				<label class="ezuser-label ezuser-$stringRight" for="$container-$tagConfirm">Confirm password:</label>
 			</fieldset>
-			<fieldset class="$package-fieldset">
-				<input id="$container-OK" data-$package-action="$action" value="OK"
+			<fieldset class="ezuser-fieldset">
+				<input id="$container-OK" data-ezuser-action="$action" value="OK"
 					tabindex	=	"3243"
 $htmlButtonPreference
 				/>
 			</fieldset>
-			<fieldset class="$package-fieldset">
+			<fieldset class="ezuser-fieldset">
 $message
 			</fieldset>
 		</form>
@@ -2536,12 +3206,12 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlMessagePage (/*.string.*/ $title, /*.string.*/ $message, $sendToBrowser = false) {
-		$package		= self::getPackage();
-		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_PLAIN, $package, self::MESSAGE_TYPE_TEXT);
+//-		$package		= self::getPackage();
+		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_PLAIN, 'ezuser', self::MESSAGE_TYPE_TEXT);
 
 		$html = <<<HTML
-	<div id="$package">
-		<h4 class="$package-heading">$title</h4>
+	<div id="ezuser">
+		<h4 class="ezuser-heading">$title</h4>
 $message
 	</div>
 HTML;
@@ -2553,16 +3223,16 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlMessageForm ($message = '', $action = self::ACTION_MAIN, $sendToBrowser = false) {
-		$package		= self::getPackage();
+//-		$package		= self::getPackage();
 		$actionMain		= self::ACTION_MAIN;
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
 		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_TEXT, '', self::MESSAGE_TYPE_TEXT);
 
 		$html = <<<HTML
-		<form id="$package-$action-form" class="$package-form" onsubmit="return false">
-			<fieldset class="$package-fieldset">
+		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset">
 $message
-				<input id="$package-OK" data-$package-action="$actionMain" value="OK"
+				<input id="ezuser-OK" data-ezuser-action="$actionMain" value="OK"
 					tabindex	=	"3241"
 $htmlButtonPreference
 				/>
@@ -2579,70 +3249,16 @@ HTML;
 	}
 
 // ---------------------------------------------------------------------------
+	private	static /*.string.*/ function htmlAboutText($sendToBrowser = false) {
+		$php	= self::getFileContents('ezuser.php', 0, NULL, -1, 4096);
+		$html	= self::docBlock_to_HTML($php);
+
+		if ($sendToBrowser) {self::sendContent($html); return '';} else return $html;
+	}
+
+// ---------------------------------------------------------------------------
 	private	static /*.string.*/ function htmlAbout($sendToBrowser = false) {
-		$packageLower	= self::getPackage();
-		$package	= self::getPackage(self::PACKAGE_CASE_CAMEL);
-		$php		= self::getFileContents("$packageLower.php", 0, NULL, -1, 4096);
-
-		// Get descriptive text from docblock
-		$tagStart	= strpos($php, "/**\r\n * ");
-
-		if ($tagStart === false) {
-			$html = self::htmlPage('Development version', "$package - About");
-			if ($sendToBrowser) {self::sendContent($html); return '';} else return $html;
-		}
-
-		$tagStart	+= 8;
-		$tagEnd		= strpos($php, "\r\n", $tagStart);
-		$short		= substr($php, $tagStart, $tagEnd - $tagStart);
-
-		$tagStart	= $tagEnd + 7;
-		$tagPos		= strpos($php, "\r\n * @") + 2;
-		$long		= substr($php, $tagStart, $tagPos - $tagStart - 7);
-		$long		= str_replace(' * ', '' , $long);
-
-		// Get tags and values from docblock
-		do {
-			$tagStart	= $tagPos + 4;
-			$tagEnd		= strpos($php, "\t", $tagStart);
-			$tag		= substr($php, $tagStart, $tagEnd - $tagStart);
-			$offset		= $tagEnd + 1;
-			$tagPos		= strpos($php, "\r\n", $offset);		
-			$value		= substr($php, $tagEnd + 1, $tagPos - $tagEnd - 1);
-			$$tag		= htmlspecialchars($value);
-			$tagPos		= strpos($php, " * @", $offset);		
-		} while ($tagPos);
-
-		$body = <<<HTML
-	<h1>$package</h1>
-	<h2>$short</h2>
-	<pre class="$packageLower">$long</pre>
-	<hr />
-	<table>
-		<tr>
-			<td>Version</td>
-			<td>$version</td>
-		</tr>
-		<tr>
-			<td>Copyright</td>
-			<td>$copyright</td>
-		</tr>
-		<tr>
-			<td>License</td>
-			<td>$license</td>
-		</tr>
-		<tr>
-			<td>Author</td>
-			<td>$author</td>
-		</tr>
-		<tr>
-			<td>Link</td>
-			<td>$link</td>
-		</tr>
-	</table>	
-HTML;
-
-		$html = self::htmlPage($body, "$package - About");
+		$html	= self::htmlPage(self::htmlAboutText(), 'ezUser - About');
 
 		if ($sendToBrowser) {self::sendContent($html); return '';} else return $html;
 	}
@@ -2657,41 +3273,41 @@ HTML;
 // CSS & Javascript
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlStyleSheet($sendToBrowser = false) {
-		$package		= self::getPackage();
+//-		$package		= self::getPackage();
 		$container		= self::getInstanceId(self::ACTION_ACCOUNT);
 		$tagFullName		= self::TAGNAME_FULLNAME;
 		$tagVerbose		= self::TAGNAME_VERBOSE;
 		$buttonTypeAction	= self::BUTTON_TYPE_ACTION;
 		$buttonTypePreference	= self::BUTTON_TYPE_PREFERENCE;
 
-		$css = <<<CSS
+		$css = <<<GENERATED
 @charset "UTF-8";
 /**
  * Enables user registration and authentication for a website
  * 
  * This code has three principle design goals:
  * 
- * 	1. To make it easy for people to register and sign in to your site.
- * 	2. To make it easy for you to add this functionality to your site.
- * 	3. To make it easy for you to administer the user database on your site.
+ *     1. To make it easy for people to register and sign in to your site.
+ *     2. To make it easy for you to add this functionality to your site.
+ *     3. To make it easy for you to administer the user database on your site.
  * 
  * Other design goals, such as run-time efficiency, are important but secondary to
  * these.
  * 
- * Copyright (c) 2008-2009, Dominic Sayers							<br>
+ * Copyright (c) 2008-2010, Dominic Sayers							<br>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  * 
- * 	- Redistributions of source code must retain the above copyright notice,
- * 	  this list of conditions and the following disclaimer.
- * 	- Redistributions in binary form must reproduce the above copyright notice,
- * 	  this list of conditions and the following disclaimer in the documentation
- * 	  and/or other materials provided with the distribution.
- * 	- Neither the name of Dominic Sayers nor the names of its contributors may be
- * 	  used to endorse or promote products derived from this software without
- * 	  specific prior written permission.
+ *     - Redistributions of source code must retain the above copyright notice,
+ *       this list of conditions and the following disclaimer.
+ *     - Redistributions in binary form must reproduce the above copyright notice,
+ *       this list of conditions and the following disclaimer in the documentation
+ *       and/or other materials provided with the distribution.
+ *     - Neither the name of Dominic Sayers nor the names of its contributors may be
+ *       used to endorse or promote products derived from this software without
+ *       specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -2705,32 +3321,32 @@ HTML;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * @package	ezUser
- * @author	Dominic Sayers <dominic_sayers@hotmail.com>
- * @copyright	2009 Dominic Sayers
+ * @author	Dominic Sayers <dominic@sayers.cc>
+ * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.22 - Newer version of common functions class
+ * @version	0.24.3 - Deferred session start (also common functions class v1.14)
  */
 
 .dummy {} /* Webkit is ignoring the first item so we'll put a dummy one in */
 
-.$package {
+.ezuser {
 	margin:0;
 	padding:0;
 	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
 	font-size:11px;
 }
 
-pre.$package {
+pre.ezuser {
 	font-family:Consolas, Courier New, Courier, fixedsys;
 }
 
-.$package-left		{float:left;}
-.$package-right		{float:right;}
-.$package-hidden	{display:none;}
-.$package-heading	{padding:6px;margin:0 0 1em 0;}
+.ezuser-left		{float:left;}
+.ezuser-right		{float:right;}
+.ezuser-hidden	{display:none;}
+.ezuser-heading	{padding:6px;margin:0 0 1em 0;}
 
-div#$package {
+div#ezuser {
 	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
 	font-size:11px;
 	line-height:100%;
@@ -2744,7 +3360,7 @@ div#$container {
 	float:left;
 }
 
-div.$package-message {
+div.ezuser-message {
 /*	width:154px;		*/
 	float:left;
 /*	padding:6px;		*/
@@ -2753,7 +3369,7 @@ div.$package-message {
 /*	visibility:hidden;	*/
 }
 
-div.$package-text {
+div.ezuser-text {
 	width:286px;
 /*	height:48px;		*/
 	float:left;
@@ -2764,13 +3380,13 @@ div.$package-text {
 	line-height:16px;
 }
 
-p.$package-message-plain	{margin:0;padding:6px;}
-p.$package-message-info	{margin:0;padding:6px;background-color:#FFCC00;color:#000000;}
-p.$package-message-text	{margin:0;padding:6px;background-color:#EEEEEE;color:#000000;}
-p.$package-message-fail	{margin:0;padding:6px;background-color:#FF0000;color:#FFFFFF;font-weight:bold;}
-p.$package-message-hidden	{display:none;}
+p.ezuser-message-plain	{margin:0;padding:6px;}
+p.ezuser-message-info	{margin:0;padding:6px;background-color:#FFCC00;color:#000000;}
+p.ezuser-message-text	{margin:0;padding:6px;background-color:#EEEEEE;color:#000000;}
+p.ezuser-message-fail	{margin:0;padding:6px;background-color:#FF0000;color:#FFFFFF;font-weight:bold;}
+p.ezuser-message-hidden	{display:none;}
 
-div.$package-$tagFullName {
+div.ezuser-$tagFullName {
 	float:right;
 	margin:4px 0 0 0;
 	padding:6px;
@@ -2778,18 +3394,18 @@ div.$package-$tagFullName {
 	font-weight:bold;
 }
 
-form.$package-form			{margin:0;}
-fieldset.$package-fieldset		{margin:0;padding:0;border:0;clear:both;float:right;width:286px;}
-fieldset.$package-fieldset-float	{margin:0;padding:0;border:0;clear:both;float:right;}
-label.$package-label			{padding:4px;}
+form.ezuser-form			{margin:0;}
+fieldset.ezuser-fieldset		{margin:0;padding:0;border:0;clear:both;float:right;width:286px;}
+fieldset.ezuser-fieldset-float	{margin:0;padding:0;border:0;clear:both;float:right;}
+label.ezuser-label			{padding:4px;}
 
-input.$package-text {
+input.ezuser-text {
 	font-size:11px;
 	width:160px;
 	margin-bottom:4px;
 }
 
-input.$package-button {
+input.ezuser-button {
 	padding:2px;
 	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
 	border-style:solid;
@@ -2797,36 +3413,38 @@ input.$package-button {
 	cursor:pointer;
 }
 
-input.$package-$buttonTypeAction {
+input.ezuser-$buttonTypeAction {
 	font-size:12px;
 	width:52px;
 	margin:0 0 0 6px;
 }
 
-input.$package-$buttonTypePreference {
+input.ezuser-$buttonTypePreference {
 	font-size:10px;
 	margin:4px 0 0 6px;
 }
 
-input.$package-preference-$tagVerbose {float:left;margin:0;}
+input.ezuser-preference-$tagVerbose {float:left;margin:0;}
 
-input.$package-buttonstate-0 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
-input.$package-buttonstate-1 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
-input.$package-buttonstate-2 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
-input.$package-buttonstate-3 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
-input.$package-buttonstate-4 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
-input.$package-buttonstate-5 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
-input.$package-buttonstate-6 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
-input.$package-buttonstate-7 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
+input.ezuser-buttonstate-0 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
+input.ezuser-buttonstate-1 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
+input.ezuser-buttonstate-2 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
+input.ezuser-buttonstate-3 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
+input.ezuser-buttonstate-4 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
+input.ezuser-buttonstate-5 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
+input.ezuser-buttonstate-6 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
+input.ezuser-buttonstate-7 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
 
-CSS;
+GENERATED;
+// Generated code - do not modify in built package
 
 		if ($sendToBrowser) {self::sendContent($css, '', 'text/css'); return '';} else return $css;
 	}
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlJavascript($containerList = '', $sendToBrowser = false) {
-		$package		= self::getPackage();
+//-		$package		= self::getPackage();
+//-		$packageCamel		= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$accountForm		= self::getInstanceId(self::ACTION_ACCOUNT);
 
 		$sessionName		= ini_get('session.name');
@@ -2874,44 +3492,43 @@ CSS;
 		$passwordMask		= self::PASSWORD_MASK;
 
 		$accountPage		= self::getSetting(self::SETTINGS_ACCOUNTPAGE);
-		$accountClick		= ($accountPage === '') ? "$package.ajax.execute('$actionAccountWizard')" : "window.location = '$folder/$accountPage'";
-		$containerHeader	= self::containerHeader();
+		$accountClick		= ($accountPage === '') ? "ezUser.ajax.execute('$actionAccountWizard')" : "window.location = '$folder/$accountPage'";
 
 		// Append code to request container content
 		if ($containerList === '') {
 			$immediateJavascript = '';
 		} else {
 			// Space-separated list of containers to fill
-			$immediateJavascript = "$package.ajax.execute('" . (string) str_replace(self::DELIMITER_SPACE, self::DELIMITER_PLUS, $containerList) . "');";
+			$immediateJavascript = "ezUser.ajax.execute('" . (string) str_replace(self::DELIMITER_SPACE, self::DELIMITER_PLUS, $containerList) . "');";
 		}
 
-		$js = <<<JAVASCRIPT
+		$js = <<<GENERATED
 /**
  * Enables user registration and authentication for a website
  * 
  * This code has three principle design goals:
  * 
- * 	1. To make it easy for people to register and sign in to your site.
- * 	2. To make it easy for you to add this functionality to your site.
- * 	3. To make it easy for you to administer the user database on your site.
+ *     1. To make it easy for people to register and sign in to your site.
+ *     2. To make it easy for you to add this functionality to your site.
+ *     3. To make it easy for you to administer the user database on your site.
  * 
  * Other design goals, such as run-time efficiency, are important but secondary to
  * these.
  * 
- * Copyright (c) 2008-2009, Dominic Sayers							<br>
+ * Copyright (c) 2008-2010, Dominic Sayers							<br>
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  * 
- * 	- Redistributions of source code must retain the above copyright notice,
- * 	  this list of conditions and the following disclaimer.
- * 	- Redistributions in binary form must reproduce the above copyright notice,
- * 	  this list of conditions and the following disclaimer in the documentation
- * 	  and/or other materials provided with the distribution.
- * 	- Neither the name of Dominic Sayers nor the names of its contributors may be
- * 	  used to endorse or promote products derived from this software without
- * 	  specific prior written permission.
+ *     - Redistributions of source code must retain the above copyright notice,
+ *       this list of conditions and the following disclaimer.
+ *     - Redistributions in binary form must reproduce the above copyright notice,
+ *       this list of conditions and the following disclaimer in the documentation
+ *       and/or other materials provided with the distribution.
+ *     - Neither the name of Dominic Sayers nor the names of its contributors may be
+ *       used to endorse or promote products derived from this software without
+ *       specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -2925,22 +3542,24 @@ CSS;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  * @package	ezUser
- * @author	Dominic Sayers <dominic_sayers@hotmail.com>
- * @copyright	2009 Dominic Sayers
+ * @author	Dominic Sayers <dominic@sayers.cc>
+ * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.22 - Newer version of common functions class
+ * @version	0.24.3 - Deferred session start (also common functions class v1.14)
  */
 
 /*jslint eqeqeq: true, immed: true, nomen: true, onevar: true, regexp: true, undef: true */
 /*global window, document, event, ActiveXObject */ // For JSLint
+//"use strict";
 
 // ---------------------------------------------------------------------------
-// The main ezuser client-side class
+// The main ezUser client-side class
 // ---------------------------------------------------------------------------
-function C_ezuser() {
+function C_ezUser() {
 	if (!(this instanceof arguments.callee)) {throw Error('Constructor called as a function');}
 
+// Generated code - do not modify in built package
 /**
 *
 *  Secure Hash Algorithm (SHA256)
@@ -2952,12 +3571,11 @@ function C_ezuser() {
 
 function SHA256(s){
 
-	var chrsz   = 8;
-	var hexcase = 0;
+	var chrsz   = 8, hexcase = 0;
 
 	function safe_add (x, y) {
-		var lsw = (x & 0xFFFF) + (y & 0xFFFF);
-		var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+		var lsw = (x & 0xFFFF) + (y & 0xFFFF),
+		msw = (x >> 16) + (y >> 16) + (lsw >> 16);
 		return (msw << 16) | (lsw & 0xFFFF);
 	}
 
@@ -2971,11 +3589,11 @@ function SHA256(s){
 	function Gamma1256(x) { return (S(x, 17) ^ S(x, 19) ^ R(x, 10)); }
 
 	function core_sha256 (m, l) {
-		var K = new Array(0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5, 0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5, 0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3, 0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174, 0xE49B69C1, 0xEFBE4786, 0xFC19DC6, 0x240CA1CC, 0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA, 0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7, 0xC6E00BF3, 0xD5A79147, 0x6CA6351, 0x14292967, 0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13, 0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85, 0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3, 0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070, 0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5, 0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3, 0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2);
-		var HASH = new Array(0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19);
-		var W = new Array(64);
-		var a, b, c, d, e, f, g, h, i, j;
-		var T1, T2;
+		var K = [0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5, 0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5, 0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3, 0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174, 0xE49B69C1, 0xEFBE4786, 0xFC19DC6, 0x240CA1CC, 0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA, 0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7, 0xC6E00BF3, 0xD5A79147, 0x6CA6351, 0x14292967, 0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13, 0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85, 0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3, 0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070, 0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5, 0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3, 0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2],
+		HASH = [0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19],
+		W = new Array(64),
+		a, b, c, d, e, f, g, h, i, j,
+		T1, T2;
 
 		m[l >> 5] |= 0x80 << (24 - l % 32);
 		m[((l + 64 >> 9) << 4) + 15] = l;
@@ -3068,6 +3686,7 @@ function SHA256(s){
 	return binb2hex(core_sha256(str2binb(s), s.length * chrsz));
 
 }
+// End of generated code
 
 	this.getControl	= function (id)		{return document.getElementById(id);};
 	this.getValue	= function (id)		{return this.getControl(id).value;};
@@ -3151,8 +3770,8 @@ function SHA256(s){
 		var textId = '', control = null;
 
 		switch (id) {
-		case '$package':
-			textId = '$package-$tagUsername';
+		case 'ezuser':
+			textId = 'ezuser-$tagUsername';
 			break;
 		case '$accountForm':
 			textId = '$accountForm-$tagEmail';
@@ -3167,7 +3786,7 @@ function SHA256(s){
 // ---------------------------------------------------------------------------
 	function hideControl(id) {
 		var	control		= that.getControl(id),
-			className	= control.className + ' $package-hidden';
+			className	= control.className + ' ezuser-hidden';
 
 		control.className	= className;
 		control.style.display	= 'none';	// belt and braces
@@ -3178,7 +3797,7 @@ function SHA256(s){
 		var	control		= that.getControl(id),
 			classString	= control.className;
 
-		classString		= classString.replace(/$package-hidden/g, '');
+		classString		= classString.replace(/ezuser-hidden/g, '');
 		classString		= classString.replace(/ {2}/g, ' ');
 		control.className	= classString;
 		control.style.display	= '';	// belt and braces
@@ -3197,11 +3816,11 @@ function SHA256(s){
 		if (arguments.length < 1) {message	= '';}
 		if (arguments.length < 2) {fail		= false;}
 		if (arguments.length < 3) {messageType	= 'message';}
-		if (arguments.length < 4) {instance	= '$package';}
+		if (arguments.length < 4) {instance	= 'ezuser';}
 
 		var	id		= instance + '-' + messageType,
 			div		= this.getControl(id),
-			classString	= '$package-' + messageType + ' $package-$stringRight',
+			classString	= 'ezuser-' + messageType + ' ezuser-$stringRight',
 			subClass	= (fail) ? 'fail' : 'info',
 			p;
 
@@ -3210,14 +3829,14 @@ function SHA256(s){
 
 		if (message !== '') {
 			p		= document.createElement('p');
-			p.className	= '$package-message-' + subClass;
+			p.className	= 'ezuser-message-' + subClass;
 			p.innerHTML	= message;
 			div.className	= classString;
 
 			div.appendChild(p);
 		}
 
-		div = this.getControl('$package-$tagVerbose');
+		div = this.getControl('ezuser-$tagVerbose');
 		if (div !== null) {div.parentNode.removeChild(div);}
 	};
 
@@ -3238,7 +3857,7 @@ function SHA256(s){
 		if (control === null) {return false;}
 
 		var	baseClass	= control.className,
-			stateClass	= '$package-buttonstate-',
+			stateClass	= 'ezuser-buttonstate-',
 			pos		= baseClass.indexOf(stateClass),
 			currentState	= Number(control.state);
 
@@ -3290,7 +3909,7 @@ function SHA256(s){
 
 		read: function () {
 			this.sessionId		= this.acquire('$sessionName');
-			this.username		= this.acquire('$cookieUsername'),
+			this.username		= this.acquire('$cookieUsername');
 			this.passwordHash	= this.acquire('$cookiePassword');
 			this.staySignedIn	= this.acquire('$cookieStaySignedIn');
 			this.staySignedIn	= (this.staySignedIn === '') ? false : true;
@@ -3311,12 +3930,18 @@ function SHA256(s){
 		},
 
 		update: function () {
-			this.username = that.getValue('$package-$tagUsername');
+			this.username = that.getValue('ezuser-$tagUsername');
+
+//			if (typeof ajaxUnit === 'function') {ajaxUnit('passwordDefault_SignIn = ' + that.passwordDefault_SignIn,	true);}	// Debug
+//			if (typeof ajaxUnit === 'function') {ajaxUnit('this.passwordHash = ' + this.passwordHash,			true);}	// Debug
 
 			if (!that.passwordDefault_SignIn || (this.passwordHash === '')) {
-				var password		= that.getValue('$package-$tagPassword');
+				var password		= that.getValue('ezuser-$tagPassword');
 				this.passwordHash	= SHA256('$remoteAddress' + SHA256(password));
 			}
+
+//			if (typeof ajaxUnit === 'function') {ajaxUnit('\\$remoteAddress = $remoteAddress',				true);}	// Debug
+//			if (typeof ajaxUnit === 'function') {ajaxUnit('this.passwordHash = ' + this.passwordHash,			true);}	// Debug
 
 			if (this.rememberMe) {
 				// Remember username & password for 30 days
@@ -3336,8 +3961,8 @@ function SHA256(s){
 		},
 
 		showPreferences: function () {
-			that.setButtonState(that.getControl('$package-$tagRememberMe'),		4, this.rememberMe);
-			that.setButtonState(that.getControl('$package-$tagStaySignedIn'),	4, this.staySignedIn);
+			that.setButtonState(that.getControl('ezuser-$tagRememberMe'),		4, this.rememberMe);
+			that.setButtonState(that.getControl('ezuser-$tagStaySignedIn'),	4, this.staySignedIn);
 		},
 
 		toggleRememberMe: function() {
@@ -3368,7 +3993,7 @@ function SHA256(s){
 
 			if ((this.readyState === 4) && (this.status === 200)) {
 				if (isNaN(this.responseText)) {
-					id = this.getResponseHeader('$containerHeader');
+					id = this.getResponseHeader('ezUser-container');
 
 					if (this.responseXML !== null) {
 						that.fillContainersXML(this.responseXML);
@@ -3381,26 +4006,25 @@ function SHA256(s){
 				} else {
 					fail		= true;
 					message		= 'Server error, please try later';
-					cancelButton	= that.getControl('$package-$actionCancel');
+					cancelButton	= that.getControl('ezuser-$actionCancel');
 
 					that.showMessage(message, fail);
 
 					if (cancelButton !== null) {
-						cancelButton.id		= '$package-$actionSignIn';
+						cancelButton.id		= 'ezuser-$actionSignIn';
 						cancelButton.value	= 'Sign in';
-						cancelButton.setAttribute('data-$package-action', '$actionSignIn');
+						cancelButton.setAttribute('data-ezuser-action', '$actionSignIn');
 					}
 				}
 
-				// Unit testing callback function
-				if (typeof ajaxUnit === 'function') {ajaxUnit(this);}
+				if (typeof ajaxUnit === 'function') {ajaxUnit(this);}	// Automated unit testing
 			}
 		},
 
 		serverTalk: function (URL, requestType, requestData) {
 			this.xhr.open(requestType, URL);
 			this.xhr.onreadystatechange = this.handleServerResponse;
-			this.xhr.setRequestHeader('Accept', 'text/html,application/$package');
+			this.xhr.setRequestHeader('Accept', 'text/html,application/ezuser');
 			if (requestType === 'POST') {this.xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');}
 			this.xhr.send(requestData);
 		},
@@ -3423,28 +4047,30 @@ function SHA256(s){
 
 			switch (action) {
 			case '$actionSignIn':
-				control		= that.getControl('$package-$actionSignIn');
-				control.id	= '$package-$actionCancel';
+				control		= that.getControl('ezuser-$actionSignIn');
+				control.id	= 'ezuser-$actionCancel';
 				control.value	= 'Cancel';
-				control.setAttribute('data-$package-action', '$actionCancel');
+				control.setAttribute('data-ezuser-action', '$actionCancel');
 
 				that.showMessage('Signing in - please wait');
 				that.cookies.update();	// Updates ezuser.passwordHash;
 
 				passwordHash	= SHA256(that.cookies.sessionId + that.cookies.passwordHash);
-				requestData	= '$action='		+ action;
-				requestData	+= '&$cookieUsername='		+ that.getValue('$package-$tagUsername');
+//				if (typeof ajaxUnit === 'function') {ajaxUnit('sessionId = ' + that.cookies.sessionId,		true);}	// Debug
+//				if (typeof ajaxUnit === 'function') {ajaxUnit('passwordHash = ' + passwordHash,			true);}	// Debug
+				requestData	= '$action='			+ action;
+				requestData	+= '&$cookieUsername='		+ that.getValue('ezuser-$tagUsername');
 				requestData	+= '&$cookiePassword='		+ passwordHash;
 				requestType	= 'POST';
 
 				break;
 			case '$actionValidate':
 				textNew		= that.getValue('$accountForm-$tagNewUser');
-				requestData	= '$action='		+ action;
+				requestData	= '$action='			+ action;
 				requestData	+= '&$tagNewUser='		+ textNew;
 				requestData	+= '&$tagWizard='		+ encodeURIComponent(that.getValue('$accountForm-$tagWizard'));
 				requestData	+= '&$tagEmail='		+ encodeURIComponent(that.getValue('$accountForm-$tagEmail'));
-				requestData	+= '&$tagFirstName='	+ encodeURIComponent(that.getValue('$accountForm-$tagFirstName'));
+				requestData	+= '&$tagFirstName='		+ encodeURIComponent(that.getValue('$accountForm-$tagFirstName'));
 				requestData	+= '&$tagLastName='		+ encodeURIComponent(that.getValue('$accountForm-$tagLastName'));
 				requestData	+= '&$cookieUsername='		+ that.getValue('$accountForm-$tagUsername');
 
@@ -3471,10 +4097,10 @@ function SHA256(s){
 				break;
 			case '$actionResetPassword':		// Fall-through ->
 			case '$actionResetRequest':
-				URL += '?' + thisAction + equals + that.getValue('$package-$tagUsername');
+				URL += '?' + thisAction + equals + that.getValue('ezuser-$tagUsername');
 				break;
 			case '$actionReset':
-				passwordHash = SHA256(that.getValue('$package-$actionReset-$tagPassword'));
+				passwordHash = SHA256(that.getValue('ezuser-$actionReset-$tagPassword'));
 				URL = window.location.href + '&$cookiePassword=' + passwordHash;
 				break;
 			default:
@@ -3509,10 +4135,10 @@ function SHA256(s){
 			}
 
 			// Current page
-			showControl('$accountForm-fieldset-' + this.page); 			// Show this page
+			showControl('$accountForm-fieldset-' + this.page);			// Show this page
 
 			// Next page
-			nextPageId	= '$accountForm-fieldset-' + (this.page + 1),
+			nextPageId	= '$accountForm-fieldset-' + (this.page + 1);
 			nextPage	= this.getControl(nextPageId);
 
 			if (nextPage === null) {
@@ -3533,16 +4159,16 @@ function SHA256(s){
 // ---------------------------------------------------------------------------
 	this.click = function (control) {
 		var	id	= control.id,
-			action	= control.getAttribute('data-$package-action');
+			action	= control.getAttribute('data-ezuser-action');
 
 		switch (id) {
-		case '$package-$actionAccountForm':
+		case 'ezuser-$actionAccountForm':
 			$accountClick;
 			break;
-		case '$package-$tagRememberMe':
+		case 'ezuser-$tagRememberMe':
 			this.cookies.toggleRememberMe();
 			break;
-		case '$package-$tagStaySignedIn':
+		case 'ezuser-$tagStaySignedIn':
 			this.cookies.toggleStaySignedIn();
 			break;
 		case '$accountForm-next':
@@ -3551,11 +4177,11 @@ function SHA256(s){
 		case '$accountForm-back':
 			this.wizard.pageBack();	// Previous wizard page
 			break;
-		case '$package-$tagVerbose':
+		case 'ezuser-$tagVerbose':
 			this.ajax.execute('$actionResultForm=' + control.value);
 			break;
-		case '$package-$actionResetPassword':	// Fall-through ->
-		case '$package-$actionReset-OK':		// Fall-through ->
+		case 'ezuser-$actionResetPassword':	// Fall-through ->
+		case 'ezuser-$actionReset-OK':		// Fall-through ->
 		case '$accountForm-$actionValidate':
 			if (this.localValidation(control.form.id)) {this.ajax.execute(action);}
 			break;
@@ -3571,8 +4197,30 @@ function SHA256(s){
 // ---------------------------------------------------------------------------
 // Responds to key presses on the ezuser form
 // ---------------------------------------------------------------------------
+	this.keyPress = function (e) {
+		if (!e) {e = window.event;}
+
+		var formId, id, target, status = true;
+
+		// Process Carriage Return and tidy up form
+		target	= (e.target) ? e.target : e.srcElement;
+		formId	= target.form.id;
+		id	= target.id;
+
+		if (formId === '$accountForm-form' && id === '$accountForm-$tagUsername') {
+			// If we are messing with the username then forget creating a default
+			this.usernameDefault_Account = false;
+
+			if ('' === this.removeIllegalCharacters(String.fromCharCode(e.charCode))) {
+				status = false; // cancel the event (i.e. don't allow the character)
+			}
+		}
+
+		return status;
+	};
+
 	this.keyUp = function (e) {
-		if (!e) var e = window.event;
+		if (!e) {e = window.event;}
 		var formId, id, control, target;
 
 		// Process Carriage Return and tidy up form
@@ -3581,15 +4229,15 @@ function SHA256(s){
 		id	= target.id;
 
 		switch (formId) {
-		case '$package-$actionSignIn-form':
-			if (id === '$package-$tagPassword' && this.passwordDefault_SignIn) {
+		case 'ezuser-$actionSignIn-form':
+			if (id === 'ezuser-$tagPassword' && this.passwordDefault_SignIn) {
 				// Forget password from cookie
 				this.cookies.passwordHash	= '';
 				this.passwordDefault_SignIn	= false;
 			}
 
 			if (e.keyCode === 13) {
-				this.click(this.getControl('$package-$actionSignIn'));
+				this.click(this.getControl('ezuser-$actionSignIn'));
 			} else {
 				this.showMessage(); // Hide message
 			}
@@ -3597,15 +4245,10 @@ function SHA256(s){
 			break;
 		case '$accountForm-form':
 			switch (id) {
-			case '$accountForm-$tagUsername':
-				// If we are messing with the username then forget creating a default
-				this.usernameDefault_Account = false;
-				this.normaliseUsername(this.getValue(id));
-				break;
 			case '$accountForm-$tagFirstName':
 			case '$accountForm-$tagLastName':
 				if (this.getValue('$accountForm-$tagUsername') === '') {this.usernameDefault_Account = true;}
-				if (this.usernameDefault_Account) {this.normaliseUsername(this.getValue('$accountForm-$tagFirstName') + this.getValue('$accountForm-$tagLastName'));}
+				if (this.usernameDefault_Account) {this.normalizeUsername(this.getValue('$accountForm-$tagFirstName') + this.getValue('$accountForm-$tagLastName'));}
 				break;
 			case '$accountForm-$tagPassword':
 				this.passwordSaved = target.value;
@@ -3625,9 +4268,9 @@ function SHA256(s){
 			}
 
 			break;
-		case '$package-$actionReset-form':
+		case 'ezuser-$actionReset-form':
 			if (e.keyCode === 13) {
-				this.click(this.getControl('$package-$actionReset-OK'));
+				this.click(this.getControl('ezuser-$actionReset-OK'));
 			} else {
 				this.showMessage('', false, '$messageTypeText'); // Hide message
 			}
@@ -3663,13 +4306,13 @@ function SHA256(s){
 		formId			= ((typeof formList === 'undefined') || (formList.length === 0)) ? '' : formList[0].getAttribute('id');
 
 		switch (formId) {
-		case '$package-$actionSignIn-form':
+		case 'ezuser-$actionSignIn-form':
 			this.cookies.showPreferences();
 
 			if (this.cookies.rememberMe) {
 				this.passwordDefault_SignIn = true;
-				this.setValue('$package-$tagUsername', this.cookies.username);
-				this.setValue('$package-$tagPassword', '$passwordMask');
+				this.setValue('ezuser-$tagUsername', this.cookies.username);
+				this.setValue('ezuser-$tagPassword', '$passwordMask');
 			}
 
 			break;
@@ -3748,7 +4391,7 @@ function SHA256(s){
 				control	= textEmail;
 			} else {
 				// Valid username
-				this.normaliseUsername(textUsername.value);
+				this.normalizeUsername(textUsername.value);
 
 				if (textUsername.value === '') {
 					message = 'The username cannot be blank';
@@ -3768,10 +4411,10 @@ function SHA256(s){
 			}
 
 			break;
-		case '$package-$actionReset-form':
-			textPassword	= this.getControl('$package-$actionReset-$tagPassword');
-			textConfirm	= this.getControl('$package-$actionReset-$tagConfirm');
-			instance	= '$package';
+		case 'ezuser-$actionReset-form':
+			textPassword	= this.getControl('ezuser-$actionReset-$tagPassword');
+			textConfirm	= this.getControl('ezuser-$actionReset-$tagConfirm');
+			instance	= 'ezuser';
 			control		= textPassword;
 
 			// Password OK?
@@ -3782,9 +4425,9 @@ function SHA256(s){
 			}
 
 			break;
-		case '$package-$actionResetRequest-form':
-			textUsername	= this.getControl('$package-$tagUsername');
-			instance	= '$package';
+		case 'ezuser-$actionResetRequest-form':
+			textUsername	= this.getControl('ezuser-$tagUsername');
+			instance	= 'ezuser';
 			control		= textUsername;
 
 			// Username entered?
@@ -3802,13 +4445,17 @@ function SHA256(s){
 	};
 
 // ---------------------------------------------------------------------------
-	this.normaliseUsername = function (username) {
-		var	regexString	= '[^0-9a-z_-]',
-			regex		= new RegExp(regexString, 'g'),
-			control		= this.getControl('$accountForm-$tagUsername');
+	this.removeIllegalCharacters = function (restrictedString) {
+		var	regexString	= '[^0-9A-Za-z_-]',
+			regex		= new RegExp(regexString, 'g');
 
-		username		= username.toLowerCase();
-		username		= username.replace(regex, '');
+		return restrictedString.replace(regex, '');
+	}
+
+	this.normalizeUsername = function (username) {
+		username		= this.removeIllegalCharacters(username);
+
+		var control		= this.getControl('$accountForm-$tagUsername');
 		control.defaultValue	= username;
 		control.value		= username;
 	};
@@ -3822,7 +4469,7 @@ function SHA256(s){
 			i, node;
 
 		for (i = 0; i < elementCount; i++) {
-			if (nodeList[i].title === '$package') {
+			if (nodeList[i].title === 'ezUser') {
 				found = true;
 				break;
 			}
@@ -3834,14 +4481,14 @@ function SHA256(s){
 			node.type	= 'text/css';
 			node.rel	= 'stylesheet';
 			node.href	= '$URL?$actionCSS';
-			node.title	= '$package';
+			node.title	= 'ezUser';
 			htmlHead.appendChild(node);
 		}
 	};
 
 	this.passwordFocus = function (control) {
 		switch (control.form.id) {
-		case '$package-$actionSignIn-form':
+		case 'ezuser-$actionSignIn-form':
 			if (this.passwordDefault_SignIn) {control.value = '';}
 			break;
 		case '$accountForm-form':
@@ -3857,7 +4504,7 @@ function SHA256(s){
 
 	this.passwordBlur = function (control) {
 		switch (control.form.id) {
-		case '$package-$actionSignIn-form':
+		case 'ezuser-$actionSignIn-form':
 			if (this.passwordDefault_SignIn) {control.value = '$passwordMask';}
 			break;
 		case '$accountForm-form':
@@ -3881,9 +4528,10 @@ function SHA256(s){
 // ---------------------------------------------------------------------------
 // Do stuff
 // ---------------------------------------------------------------------------
-var ezuser = new C_ezuser();
+var ezUser = new C_ezUser();
 $immediateJavascript
-JAVASCRIPT;
+GENERATED;
+// Generated code - do not modify in built package
 
 		if ($sendToBrowser) {self::sendContent($js, '', 'text/javascript'); return '';} else return $js;
 	}
@@ -3967,52 +4615,28 @@ JAVASCRIPT;
 
 			if ($ezUser->authenticated()) {
 				$html = self::getSecureContent($referer);
-				if ($sendToBrowser) {self::sendXML($html, self::ACTION_BODY); return '';} else return $html;
 			} else {
 				header('HTTP/1.1 403 Forbidden', false, 403);
-				$referer = str_replace('http://' . $_SERVER['HTTP_HOST'], '' , $referer);
-				echo <<<HTML
+				$referer = (string) str_replace('http://' . $_SERVER['HTTP_HOST'], '' , $referer);
+				$html = <<<HTML
 <h1>Forbidden</h1>
 <p>You don't have permission to access $referer on this server.</p>
 HTML;
 			}
 		} else {
 			$html = 'No referer';
-			if ($sendToBrowser) {self::sendContent($html, self::ACTION_BODY); return '';} else return $html;
 		}
+
+		if ($sendToBrowser) {self::sendContent($html, self::ACTION_BODY); return '';} else return $html;
 	}
 
 // ---------------------------------------------------------------------------
 // Sign in and sign out
 // ---------------------------------------------------------------------------
-	public static /*.void.*/ function signIn($userData = /*.(array[string]mixed).*/ array()) {
-		$autoSignIn = (count($userData) === 0);
 
-		if ($autoSignIn) {
-			if (	array_key_exists(self::COOKIE_AUTOSIGN, $_COOKIE)	&&
-				array_key_exists(self::COOKIE_USERNAME, $_COOKIE)	&&
-				($_COOKIE[self::COOKIE_AUTOSIGN] === self::STRING_TRUE)	&&
-				($_COOKIE[self::COOKIE_USERNAME] !== '')
-			   ) {
-				$userData[self::COOKIE_USERNAME] = (string) $_COOKIE[self::COOKIE_USERNAME];
-				$userData[self::COOKIE_PASSWORD] = hash(self::HASH_FUNCTION, session_id() . (string) $_COOKIE[self::COOKIE_PASSWORD]);
-			} else {
-				return;
-			}
-		}
-
-		$username	= (string) $userData[self::COOKIE_USERNAME];
-		$password	= (string) $userData[self::COOKIE_PASSWORD];
-		$ezUser		= (($username === '') || ($password === '')) ? new ezUser_base() : self::lookup($username);
-
-		if ($ezUser->status() === self::STATUS_UNKNOWN) {
-			$ezUser->setResult(self::RESULT_UNKNOWNUSER);
-		} else {
-			$ezUser->authenticate($password); // Sets result itself
-		}
-
-		self::setSessionObject($ezUser);
-		if (!$autoSignIn) self::htmlControlPanel('', true);
+	private static /*.void.*/ function fatalError(/*.int.*/ $result, $more = '') {
+		self::htmlResultForm($result, $more, true);
+		exit;
 	}
 
 // ---------------------------------------------------------------------------
@@ -4050,6 +4674,7 @@ HTML;
 		case self::ACTION_STYLESHEET:		$html = self::htmlStyleSheet		($sendToBrowser);				break;
 		case self::ACTION_BODY:			$html = self::htmlSecureContent		($sendToBrowser);				break;
 		case self::ACTION_ABOUT:		$html = self::htmlAbout			($sendToBrowser);				break;
+		case self::ACTION_ABOUTTEXT:		$html = self::htmlAboutText		($sendToBrowser);				break;
 		case self::ACTION_SOURCECODE:		$html = self::htmlSourceCode		($sendToBrowser);				break;
 		case self::ACTION_VERIFY:		self::verify				($id);						break;
 		case self::ACTION_RESETPASSWORD:	self::passwordReset_validate		($id);						break;
@@ -4065,13 +4690,13 @@ HTML;
 /**
  * Performs one or more actions
  *
- * To perform more than one action, specify them in the condensed format
+ * To perform more than one action, specify them in the condensed format <action>[=<id>]
  *
  * <pre>
  *     ezuser.php?foo1+foo2+foo3=bar1+bar2+bar3
  * </pre>
  *
- * or the extended format
+ * or the extended format action=<action>[&id-<id>]
  *
  * <pre>
  *     ezuser.php?action=foo1+foo2+foo3&id=bar1+bar2+bar3
@@ -4095,7 +4720,7 @@ HTML;
  * @param array $actions Same format as {@link http://www.php.net/$_GET $_GET} (which is where it usually comes from)
  */
 	public static /*.void.*/ function doActions(/*.array[string]string.*/ $actions) {
-		// Translate from short form (ezUser.php?foo=bar) to extended form (ezUser.php?action=foo&id=bar)
+		// Translate from short form (ezuser.php?foo=bar) to extended form (ezuser.php?action=foo&id=bar)
 		if (!array_key_exists(self::ACTION, $actions)) {
 			$actions[self::TAGNAME_ID]	= (string) reset($actions);
 			$actions[self::ACTION]		= (string) key($actions);
@@ -4124,18 +4749,19 @@ HTML;
 //	public static /*.void.*/ function getStatusDescription	(/*.int.*/ $status, $more = '')			{self::statusDescription($status, $more,		true);}
 //	public static /*.void.*/ function getResultDescription	(/*.int.*/ $result, $more = '')			{self::resultDescription($result, $more,		true);}
 	public static /*.void.*/ function getResultForm		(/*.int.*/ $result, $more = '')			{self::htmlResultForm($result, $more,			true);}
-	public static /*.void.*/ function fatalError		(/*.int.*/ $result, $more = '')			{self::htmlResultForm($result, $more,			true); exit;}
 	public static /*.void.*/ function getAccountForm	($mode = '', $newUser = false, $wizard = false)	{self::htmlAccountForm($mode, $newUser, $wizard,	true);}
 //	public static /*.void.*/ function getDashboard		()						{self::htmlDashboard(					true);}
 //	public static /*.void.*/ function getSignInForm		()						{self::htmlSignInForm(					true);}
-//	public static /*.void.*/ function getControlPanel	($username = '')				{self::htmlControlPanel($username,			true);}
+	public static /*.void.*/ function getControlPanel	($username = '')				{self::htmlControlPanel($username,			true);}
 //	public static /*.void.*/ function getStyleSheet		()						{self::htmlStyleSheet(					true);}
 //	public static /*.void.*/ function getJavascript		($containerList = '')				{self::htmlJavascript($containerList,			true);}
 	public static /*.void.*/ function getContainer		($action = self::ACTION_MAIN)			{self::htmlContainer($action,				true);}
 	public static /*.void.*/ function getAbout		()						{self::htmlAbout(					true);}
+	public static /*.void.*/ function getAboutText		()						{self::htmlAboutText(					true);}
 //	public static /*.void.*/ function getSourceCode		()						{self::htmlSourceCode(					true);}
 }
 // End of class ezUser
+
 
 
 // Some code to make this all automagic
@@ -4143,14 +4769,7 @@ HTML;
 // If you want more control over how ezUser works then you might need to amend
 // or even remove the code below here
 
-// There may already be a session in progress. We will use the existing
-// session if possible.
-if ((int) ini_get('session.use_cookies') === 0)
-	ezUser::fatalError(ezUser::RESULT_NOSESSIONCOOKIES);
-else
-	if (!isset($_SESSION) || !is_array($_SESSION)) session_start();
-
-$ezUser = ezUser::getSessionObject();
+//-$ezUser = ezUser::getSessionObject();
 
 // Is this script included in another page or is it the HTTP target itself?
 if (basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__)) {
@@ -4161,6 +4780,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__)) {
 		switch ((string) $_POST[ezUser::ACTION]) {
 		case ezUser::ACTION_SIGNIN:
 			ezUser::signIn($_POST);
+			ezUser::getControlPanel();
 			break;
 		case ezUser::ACTION_VALIDATE:
 			ezUser::save($_POST);
@@ -4171,7 +4791,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__)) {
 			break;
 		}
 	} else if (is_array($_GET) && count($_GET) > 0) {
-		if (!$ezUser->authenticated()) ezUser::signIn(); // Attempt auto-signin?
+//-		if (!$ezUser->authenticated()) ezUser::signIn(); // Attempt auto-signin?
 		ezUser::doActions(/*.(array[string]string).*/ $_GET);
 	} else {
 		ezUser::getAbout(); // Nothing useful in $_GET or $_POST, so give a friendly greeting
