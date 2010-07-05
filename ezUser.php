@@ -42,7 +42,7 @@
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.24.3 - Deferred session start (also common functions class v1.14)
+ * @version	0.25.5 - Floating div dialog boxes
  */
 
 // The quality of this code has been improved greatly by using PHPLint
@@ -72,7 +72,7 @@ $ezuser_profile['received']	= ezuser_time();
 
 interface I_ezUser_common {
 //	const	PACKAGE				= 'ezUser',
-//		VERSION				= '0.24', // Version 1.13: added
+//		VERSION				= '0.25', // Version 1.13: added
 // Version 1.14: PACKAGE & VERSION now hard-coded by build process.
 
 	const	HASH_FUNCTION			= 'SHA256',
@@ -1342,6 +1342,7 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 		ACTION_ACCOUNT		= 'account',
 		ACTION_ACCOUNTFORM	= 'accountform',
 		ACTION_ACCOUNTWIZARD	= 'accountwizard',
+		ACTION_BITMAP		= 'bitmap',
 		ACTION_BODY		= 'body',
 		ACTION_CANCEL		= 'cancel',
 		ACTION_CONTAINER	= 'container',
@@ -1732,7 +1733,6 @@ interface I_ezUser_environment extends I_ezUser_base {
 		DELIMITER_EMAIL		= '@';
 
 	public static /*.ezUser_base.*/ function lookup			($needle = '', $tagName = '');
-//-	public static /*.ezUser_base.*/ function getSessionObject	($instance = 'ezuser');
 	public static /*.ezUser_base.*/ function save			(/*.array[string]mixed.*/ $userData);
 	public static /*.ezUser_base.*/	function signIn			($userData = /*.(array[string]mixed).*/ array());
 }
@@ -1977,7 +1977,6 @@ self::logMessage("setSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 				$userData[self::COOKIE_USERNAME]	= '';
 				$userData[self::COOKIE_PASSWORD]	= '';
 				$logEntry				.= '|auto not available';
-//-				return;
 			}
 		} else {
 			$logEntry				.= '|manual';
@@ -1999,18 +1998,9 @@ self::logMessage("setSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 			}
 		}
 
-//-		$ezUser		= (($username === '') || ($password === '')) ? new ezUser_base() : self::lookup($username);
-//-
-//-		if ($ezUser->status() === self::STATUS_UNKNOWN) {
-//-			$ezUser->setResult(($autoSignInRequest) ? self::RESULT_FAILEDAUTOSIGNIN : self::RESULT_UNKNOWNUSER);
-//-		} else {
-//-			$ezUser->authenticate($password); // Sets result itself
-//-		}
-
 		self::setSessionObject($ezUser);
 		self::logMessage($logEntry . '|' . $ezUser->result());
 		return $ezUser;
-//-		if (!$autoSignInRequest) self::htmlControlPanel('', true);
 	}
 
 	protected static /*.ezUser_base.*/ function getSessionObject($instance = 'ezuser') {
@@ -2041,9 +2031,12 @@ self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 */
 
 		if	(!array_key_exists($instanceId, $_SESSION))	$_SESSION[$instanceId] = self::signIn(); // Returns ezUser object, signed in if possible
+
+		$ezUser = /*.(ezUser_base).*/ $_SESSION[$instanceId];
+
 		if	(
-			!$_SESSION[$instanceId]->authenticated() &&
-			!$_SESSION[$instanceId]->manualSignOut() &&
+			!$ezUser->authenticated() &&
+			!$ezUser->manualSignOut() &&
 			self::autoSignInAvailable()
 			)						$_SESSION[$instanceId] = self::signIn(); // Returns ezUser object, signed in if possible
 		return /*.(ezUser_base).*/ $_SESSION[$instanceId];
@@ -2474,7 +2467,6 @@ interface I_ezUser extends I_ezUser_environment {
  */
 class ezUser extends ezUser_environment implements I_ezUser {
 	private static /*.string.*/ function getXML($html = '', $container = '') {
-//-		$package = 'ezuser';
 		if (is_numeric($container) || $container === '') $container = 'ezuser'; // If passed to sendXML as an array
 		return "<ezuser container=\"$container\"><![CDATA[$html]]></ezuser>";
 	}
@@ -2482,7 +2474,6 @@ class ezUser extends ezUser_environment implements I_ezUser {
 	private static /*.void.*/ function sendXML(/*.mixed.*/ $content = '', $container = '') {
 		if (is_array($content)) {
 			// Expected array format is $content['container'] = '<html>'
-//-			$package	= self::getPackage();
 			$contentArray	= /*.(array[]string).*/ $content;
 			$xmlArray	= /*.(array[]string).*/ array_map('self::getXML', $contentArray, array_keys($contentArray)); // wrap each element
 			$xml		= implode('', $xmlArray);
@@ -2499,8 +2490,6 @@ class ezUser extends ezUser_environment implements I_ezUser {
 // Functions that build common HTML fragments
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlPage($body = '', $title = '', $sendToBrowser = false) {
-//-		$package	= self::getPackage();
-//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$URL		= self::thisURL();
 		$actionJs	= self::ACTION_JAVASCRIPT;
 		$actionCSS	= self::ACTION_STYLESHEET;
@@ -2527,8 +2516,6 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlContainer($action = self::ACTION_MAIN, $sendToBrowser = false) {
-//-		$package	= self::getPackage();
-//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$baseAction	= explode('=', $action);
 		$container	= self::getInstanceId($baseAction[0]);
 		$actionCommand	= self::ACTION;
@@ -2545,8 +2532,6 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlInputText($styleFloat = self::STRING_RIGHT) {
-//-		$package	= self::getPackage();
-//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$onKeyUp	= 'ezUser.keyUp';
 
 		return <<<HTML
@@ -2557,8 +2542,6 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlButton(/*.string.*/ $type, $styleFloat = self::STRING_RIGHT, $verbose = false) {
-//-		$package	= self::getPackage();
-//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$classVerbose	= ($verbose) ? ' ezuser-' . self::BUTTON_TYPE_PREFERENCE . '-' . self::TAGNAME_VERBOSE : '';
 		$styleString	= ($type === self::BUTTON_TYPE_HIDDEN) ? 'ezuser-' . self::BUTTON_TYPE_ACTION . " ezuser-$type" : "ezuser-$type";
 		$setButtonState	= 'ezUser.setButtonState';
@@ -2576,8 +2559,6 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlMessage($message = '', $style = self::MESSAGE_STYLE_DEFAULT, $container = '', $type = self::MESSAGE_TYPE_DEFAULT, $styleFloat = self::STRING_RIGHT) {
-//-		$package	= self::getPackage();
-//-		$packageCamel	= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$style		= ($message === '') ? 'hidden' : $style;
 		$message	= "<p class=\"ezuser-message-$style\">$message</p>";
 		$id		= ($container === '') ? "ezuser-$type" : "$container-$type";
@@ -2690,8 +2671,6 @@ HTML;
 		$ezuser_profile[self::ACTION_ACCOUNT . '-start'] = ezuser_time();
 		*/
 
-//-		$package		= self::getPackage();
-//-		$packageCamel		= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$action			= self::ACTION_ACCOUNT;
 		$actionResend		= self::ACTION_RESEND;
 		$actionValidate		= self::ACTION_VALIDATE;
@@ -2961,7 +2940,6 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlDashboard($sendToBrowser = false) {
-//-		$package		= self::getPackage();
 		$action			= self::ACTION_DASHBOARD;
 		$actionSignOut		= self::ACTION_SIGNOUT;
 		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
@@ -2998,10 +2976,10 @@ HTML;
 		$verbose		= false;	// Set to true to let the user see detailed result information (recommended setting is false)
 //$verbose = true; // debug
 
-//-		$package		= self::getPackage();
 		$action			= self::ACTION_SIGNIN;
 		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
 		$actionResetRequest	= self::ACTION_RESETREQUEST;
+		$actionBitmap		= self::ACTION_BITMAP;
 		$tagUsername		= self::TAGNAME_USERNAME;
 		$tagPassword		= self::TAGNAME_PASSWORD;
 		$tagRememberMe		= self::TAGNAME_REMEMBERME;
@@ -3016,6 +2994,7 @@ HTML;
 		$htmlInputText		= self::htmlInputText();
 		$ezUser			= self::getSessionObject();
 		$result			= $ezUser->result();
+		$URL			= self::thisURL();
 
 		if ($result <= self::RESULT_SUCCESS) {
 			$message = self::htmlMessage();
@@ -3040,6 +3019,7 @@ HTML;
 		$password = '';
 
 		$html = <<<HTML
+		<img id="ezuser-close" class="ezuser-dialog-control" src="$URL?$actionBitmap=close" onclick="ezUser.click(this)" />
 		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
 			<fieldset class="ezuser-fieldset">
 				<input id= "ezuser-$tagUsername"
@@ -3099,7 +3079,6 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlResetRequest ($username = '', $sendToBrowser = false) {
-//-		$package		= self::getPackage();
 		$action			= self::ACTION_RESETREQUEST;
 		$actionCancel		= self::ACTION_CANCEL;
 		$actionResetPassword	= self::ACTION_RESETPASSWORD;
@@ -3137,7 +3116,6 @@ HTML;
 	}
 
 /**
- *
  * Password reset form (& confirmation form below)
  *
  * This function is slightly different as it send the HTML for an entire
@@ -3149,7 +3127,6 @@ HTML;
  * @param boolean $sendToBrowser
  */
 	private static /*.string.*/ function htmlResetPassword (ezUser_base $ezUser, $sendToBrowser = false) {
-//-		$package		= self::getPackage();
 		$action			= self::ACTION_RESET;
 		$tagPassword		= self::TAGNAME_PASSWORD;
 		$tagConfirm		= self::TAGNAME_CONFIRM;
@@ -3206,7 +3183,6 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlMessagePage (/*.string.*/ $title, /*.string.*/ $message, $sendToBrowser = false) {
-//-		$package		= self::getPackage();
 		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_PLAIN, 'ezuser', self::MESSAGE_TYPE_TEXT);
 
 		$html = <<<HTML
@@ -3223,7 +3199,6 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlMessageForm ($message = '', $action = self::ACTION_MAIN, $sendToBrowser = false) {
-//-		$package		= self::getPackage();
 		$actionMain		= self::ACTION_MAIN;
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
 		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_TEXT, '', self::MESSAGE_TYPE_TEXT);
@@ -3269,11 +3244,10 @@ HTML;
 		if ($sendToBrowser) {self::sendContent($html); return '';} else return $html;
 	}
 
-// ---------------------------------------------------------------------------
-// CSS & Javascript
-// ---------------------------------------------------------------------------
-	private static /*.string.*/ function htmlStyleSheet($sendToBrowser = false) {
-//-		$package		= self::getPackage();
+/**
+ * Other MIME types: CSS, Javascript, bitmaps
+ */
+	private static /*.string.*/ function htmlStyleSheet(/*.boolean.*/ $sendToBrowser = false) {
 		$container		= self::getInstanceId(self::ACTION_ACCOUNT);
 		$tagFullName		= self::TAGNAME_FULLNAME;
 		$tagVerbose		= self::TAGNAME_VERBOSE;
@@ -3325,7 +3299,7 @@ HTML;
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.24.3 - Deferred session start (also common functions class v1.14)
+ * @version	0.25.5 - Floating div dialog boxes
  */
 
 .dummy {} /* Webkit is ignoring the first item so we'll put a dummy one in */
@@ -3333,49 +3307,68 @@ HTML;
 .ezuser {
 	margin:0;
 	padding:0;
-	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
+	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
 	font-size:11px;
 }
 
-pre.ezuser {
-	font-family:Consolas, Courier New, Courier, fixedsys;
-}
+pre.ezuser {font-family:Consolas, Courier New, Courier, fixedsys;}
 
 .ezuser-left		{float:left;}
 .ezuser-right		{float:right;}
 .ezuser-hidden	{display:none;}
 .ezuser-heading	{padding:6px;margin:0 0 1em 0;}
+.ezuser-dialog-control	{cursor:pointer;}
+
+img#ezuser-close {
+	width:40px;
+	height:40px;
+	position:absolute;
+	left:319px;
+	top:-25px;
+}
 
 div#ezuser {
-	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
+	text-align: left;
+	width: 300px;
+	height: 100px;
+	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
 	font-size:11px;
+	padding:1.5em;
+	border:1em solid #CCCCCC;
+	border-radius: 2em;
+	-icab-border-radius: 2em;	/* iCab */
+	-khtml-border-radius: 2em;	/* Konqueror */
+	-moz-border-radius: 2em;	/* Firefox */
+	-o-border-radius: 2em;		/* Opera */
+	-webkit-border-radius: 2em;	/* Chrome, Safari */
+	box-shadow: 0.4em 0.4em 1.8em #555555;
+	-icab-box-shadow: 0.4em 0.4em 1.8em #555555;		/* iCab */
+	-khtml-box-shadow: 0.4em 0.4em 1.8em #555555;		/* Konqueror */
+	-moz-box-shadow: 0.4em 0.4em 1.8em #555555;		/* Firefox */
+	-o-box-shadow: 0.4em 0.4em 1.8em #555555;		/* Opera */
+	-webkit-box-shadow: 0.4em 0.4em 1.8em #555555;	/* Chrome, Safari */
 	line-height:100%;
-	float:left;
+	background-color:#EEEEEE;
 }
 
 div#$container {
-	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
+	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
 	font-size:12px;
 	line-height:100%;
 	float:left;
 }
 
 div.ezuser-message {
-/*	width:154px;		*/
 	float:left;
-/*	padding:6px;		*/
 	text-align:center;
 	font-weight:normal;
-/*	visibility:hidden;	*/
 }
 
 div.ezuser-text {
 	width:286px;
-/*	height:48px;		*/
 	float:left;
 	padding:0;
 	text-align:justify;
-/*	visibility:hidden;	*/
 	margin:7px 0 7px 0;
 	line-height:16px;
 }
@@ -3407,9 +3400,15 @@ input.ezuser-text {
 
 input.ezuser-button {
 	padding:2px;
-	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
+	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
 	border-style:solid;
 	border-width:1px;
+	border-radius: 4px;
+	-icab-border-radius: 4px;	/* iCab */
+	-khtml-border-radius: 4px;	/* Konqueror */
+	-moz-border-radius: 4px;	/* Firefox */
+	-o-border-radius: 4px;		/* Opera */
+	-webkit-border-radius: 4px;	/* Chrome, Safari */
 	cursor:pointer;
 }
 
@@ -3443,8 +3442,6 @@ GENERATED;
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlJavascript($containerList = '', $sendToBrowser = false) {
-//-		$package		= self::getPackage();
-//-		$packageCamel		= self::getPackage(self::PACKAGE_CASE_CAMEL);
 		$accountForm		= self::getInstanceId(self::ACTION_ACCOUNT);
 
 		$sessionName		= ini_get('session.name');
@@ -3546,16 +3543,16 @@ GENERATED;
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.24.3 - Deferred session start (also common functions class v1.14)
+ * @version	0.25.5 - Floating div dialog boxes
  */
 
 /*jslint eqeqeq: true, immed: true, nomen: true, onevar: true, regexp: true, undef: true */
 /*global window, document, event, ActiveXObject */ // For JSLint
 //"use strict";
 
-// ---------------------------------------------------------------------------
-// The main ezUser client-side class
-// ---------------------------------------------------------------------------
+/**
+ * All ezUser functionality is held in this class to avoid namespace clashes
+ */
 function C_ezUser() {
 	if (!(this instanceof arguments.callee)) {throw Error('Constructor called as a function');}
 
@@ -3845,10 +3842,10 @@ function SHA256(s){
 		document.getElementsByTagName('body')[0].innerHTML += html;
 	};
 
-// ---------------------------------------------------------------------------
-// Responds to various UI events and controls the appearance of the form's
-// buttons
-// ---------------------------------------------------------------------------
+/**
+ * Responds to various UI events and controls the appearance of the form's
+ * buttons
+ */
 	this.setButtonState = function (control, eventID, setOn) {
 		// eventID	1 = mouseover/mouseout
 		//		2 = focus/blur
@@ -3868,9 +3865,9 @@ function SHA256(s){
 		return true;
 	};
 
-// ---------------------------------------------------------------------------
-//	Cookies! Mmmm.
-// ---------------------------------------------------------------------------
+/**
+ * Cookies! Mmmm.
+ */
 	this.cookies	= {
 		sessionId:	'',
 		username:	'',
@@ -3982,9 +3979,9 @@ function SHA256(s){
 		}
 	};
 
-// ---------------------------------------------------------------------------
-// AJAX handling
-// ---------------------------------------------------------------------------
+/**
+ * AJAX handling
+ */
 	this.ajax = {
 		xhr: new window.XMLHttpRequest(),
 
@@ -4003,6 +4000,7 @@ function SHA256(s){
 						that.fillContainerText(id, this.responseText);
 					}
 
+					that.dialog(id).position();
 				} else {
 					fail		= true;
 					message		= 'Server error, please try later';
@@ -4112,9 +4110,9 @@ function SHA256(s){
 		}
 	};
 
-// ---------------------------------------------------------------------------
-//	Account wizard page handling
-// ---------------------------------------------------------------------------
+/**
+ * Account wizard page handling
+ */
 	this.wizard = {
 		page: 1,
 
@@ -4154,9 +4152,9 @@ function SHA256(s){
 		initialize:	function () {this.page = 1;}
 	};
 
-// ---------------------------------------------------------------------------
-// Responds to clicks on the ezuser form
-// ---------------------------------------------------------------------------
+/**
+ * Responds to clicks on the ezUser form
+ */
 	this.click = function (control) {
 		var	id	= control.id,
 			action	= control.getAttribute('data-ezuser-action');
@@ -4194,9 +4192,9 @@ function SHA256(s){
 		return false;
 	};
 
-// ---------------------------------------------------------------------------
-// Responds to key presses on the ezuser form
-// ---------------------------------------------------------------------------
+/**
+ * Responds to keypresses on the ezUser form
+ */
 	this.keyPress = function (e) {
 		if (!e) {e = window.event;}
 
@@ -4279,6 +4277,50 @@ function SHA256(s){
 		}
 
 		return true;
+	};
+
+/**
+ * Manages the ezUser forms as dialog boxes
+ */
+	 this.dialog = function(id) {
+		this.control = document.getElementById(id);
+
+		this.windowRect = function() {
+			var	width	= 0,
+				height	= 0;
+
+			if (typeof window.innerWidth === 'number') {
+				width	= window.innerWidth;
+				height	= window.innerHeight;
+			} else if (document.documentElement && document.documentElement.clientWidth) {
+				width	= document.documentElement.clientWidth;
+				height	= document.documentElement.clientHeight;
+			} else if (document.body && document.body.clientWidth) {
+				width	= document.body.clientWidth;
+				height	= document.body.clientHeight;
+			}
+
+			return {width: width, height: height};
+		};
+
+		this.rect = function() {
+			return {width: this.control.offsetWidth, height: this.control.offsetHeight};
+		};
+
+		this.position = function() {
+			var	dialogRect		= this.rect(),
+				windowRect		= this.windowRect(),
+				goldenSectionCenter	= 2 * windowRect.height / (3 + Math.sqrt(5)),
+				dialogCenter		= dialogRect.height / 2,
+				top			= (goldenSectionCenter	> dialogCenter)		? (goldenSectionCenter		- dialogCenter)			+ 'px' : 0,
+				left			= (windowRect.width	> dialogRect.width)	? ((windowRect.width / 2)	- (dialogRect.width / 2))	+ 'px' : 0;
+
+				this.control.style.position	= 'absolute';
+				this.control.style.left		= left;
+				this.control.style.top		= top;
+		};
+
+		return this;
 	};
 
 // ---------------------------------------------------------------------------
@@ -4518,16 +4560,16 @@ function SHA256(s){
 		return true;
 	};
 
-// ---------------------------------------------------------------------------
-// Constructor
-// ---------------------------------------------------------------------------
+/**
+ * Constructor
+ */
 	this.cookies.read();
 	this.addStyleSheet();
 }
 
-// ---------------------------------------------------------------------------
-// Do stuff
-// ---------------------------------------------------------------------------
+/**
+ * Do stuff
+ */
 var ezUser = new C_ezUser();
 $immediateJavascript
 GENERATED;
@@ -4535,6 +4577,21 @@ GENERATED;
 
 		if ($sendToBrowser) {self::sendContent($js, '', 'text/javascript'); return '';} else return $js;
 	}
+
+	public static /*.string.*/ function inlineBitmap(/*.string.*/ $id, $sendToBrowser = true) {
+		switch ($id) {
+		case 'close':
+			$mimeType	= 'image/gif';
+			$bitmap		= base64_decode('R0lGODlhKAAoAIQaAMzMzM3Nzc7Ozs/Pz9DQ0NLS0tXV1djY2Nra2tvb293d3d7e3uDg4OHh4ePj4+np6erq6uzs7O7u7vPz8/X19fb29vn5+fr6+vz8/P7+/v///////////////////////yH+IUNvcHlyaWdodCAoYykgMjAxMCBEb21pbmljIFNheWVycwAh+QQBCgAfACwAAAAAKAAoAAAF/uAnjmT5EcQQBANqvvArtI00WVlmTVKTCrHgaOagaI7I5JHiGACFMsYlSZE8HI6HxIi8MJ5QkaBQQU4aBYB6rS40JshKARwcHDDHCoLN5yPKGhgHA0IDCxkaGQ59jHwOiBkLhDACB4gYe42aagh4GQd0JAV4GAabpwAGpAUyZRmZqJsIiBWhAgxHi2sKEQmoCxEMbA5HXyQDUxVsuEcQmxBICmxlF5MfAsQasAARSc6M0EgRbAi5TwNGE3wLSt9s4Ui+bHAUkwRHDX3wze/tfQ1HCIgAqCGNPn8A9mlwx6YAvhMSNFDQpBBCRU1GJKCAI+GZEoSNIk5IYUHDg1MK5pEwZPRAgwUViHR5BKmJWIYVMVGlXMnIJouSJ2d+5Mmn5UsCHIV+XLhJJIqIExtVvNgoo0CCBvlQpcrHoYYGIu59PeitX1k+BAV+QKdBHZsENNUoXMCH3iRsR7Z1Uyk1ybg15TQ4AINMg7JdfCkiEbaGmrVrzGQCYBCB7qkEEaStyWaMhABX22IxmmU4lIhRgUyJZqQqECsZlgKFXt0pEagYhiBJFv0okaRCd/LMbvTniKDHMcYAaoumkRs4eeaEGSKFihUsWrgc8WI6DBHtS5c06T79Gg0bOHTw8OGkfBgUKli4KB8CADs=');	// Generated code - do not modify in built package
+			break;
+		default:
+			$mimeType	= '';
+			$bitmap		= 'Unknown bitmap';
+		}
+
+		if ($sendToBrowser) {self::sendContent($bitmap, 'bitmap', $mimeType); return '';} else return $bitmap;
+	}
+
 
 // ---------------------------------------------------------------------------
 // Account verification
@@ -4663,6 +4720,7 @@ HTML;
 		switch ($action) {
 		case self::ACTION_CONTAINER:		$html = self::htmlContainer		($id,			$sendToBrowser);	break;
 		case self::ACTION_MAIN:			$html = self::htmlControlPanel		($id,			$sendToBrowser);	break;
+		case self::ACTION_BITMAP:		$html = self::inlineBitmap		($id,			$sendToBrowser);	break;
 		case self::ACTION_RESETREQUEST:		$html = self::htmlResetRequest		($id,			$sendToBrowser);	break;
 		case self::ACTION_ACCOUNT:		$html = self::htmlAccountForm		($id, false, false,	$sendToBrowser);	break;
 		case self::ACTION_ACCOUNTWIZARD:	$html = self::htmlAccountForm		($id, false, true,	$sendToBrowser);	break;
@@ -4764,18 +4822,9 @@ HTML;
 
 
 
-// Some code to make this all automagic
-//
-// If you want more control over how ezUser works then you might need to amend
-// or even remove the code below here
-
-//-$ezUser = ezUser::getSessionObject();
-
 // Is this script included in another page or is it the HTTP target itself?
 if (basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__)) {
-	// This script has been called directly by the client
-
-	// $_POST & $_GET are our friends
+	// This script has been called directly by the browser, so check what it has sent
 	if (is_array($_POST) && array_key_exists(ezUser::ACTION, $_POST)) {
 		switch ((string) $_POST[ezUser::ACTION]) {
 		case ezUser::ACTION_SIGNIN:
@@ -4790,8 +4839,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__)) {
 			ezUser::getResultForm(ezUser::RESULT_UNKNOWNACTION);
 			break;
 		}
-	} else if (is_array($_GET) && count($_GET) > 0) {
-//-		if (!$ezUser->authenticated()) ezUser::signIn(); // Attempt auto-signin?
+	} else if (is_array($_GET) && (count($_GET) > 0)) {
 		ezUser::doActions(/*.(array[string]string).*/ $_GET);
 	} else {
 		ezUser::getAbout(); // Nothing useful in $_GET or $_POST, so give a friendly greeting

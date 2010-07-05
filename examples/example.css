@@ -1,4 +1,4 @@
-﻿div#ezuser {
+﻿div#devpkg {
 		border: medium solid #008000;
 		padding: 8px;
 		font-family: Calibri, "Trebuchet MS", Arial, Helvetica, sans-serif;
@@ -8,7 +8,7 @@
 		float: left;
 }
 
-div#ezuser-account {
+div#devpkg-account {
 	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
 	font-size:12px;
 	line-height:100%;
@@ -16,13 +16,13 @@ div#ezuser-account {
 	float:left;
 }
 
-div.ezuser-message {
+div.devpkg-message {
 	float:left;
 	text-align:center;
 	font-weight:normal;
 }
 
-div.ezuser-text {
+div.devpkg-text {
 	width:286px;
 	float:left;
 	padding:0;
@@ -31,13 +31,13 @@ div.ezuser-text {
 	line-height:16px;
 }
 
-p.ezuser-message-plain	{margin:0;padding:6px;}
-p.ezuser-message-info	{margin:0;padding:6px;background-color:#FFCC00;color:#000000;}
-p.ezuser-message-text	{margin:0;padding:6px;background-color:#EEEEEE;color:#000000;}
-p.ezuser-message-fail	{margin:0;padding:6px;background-color:#FF0000;color:#FFFFFF;font-weight:bold;}
-p.ezuser-message-hidden	{display:none;}
+p.devpkg-message-plain	{margin:0;padding:6px;}
+p.devpkg-message-info	{margin:0;padding:6px;background-color:#FFCC00;color:#000000;}
+p.devpkg-message-text	{margin:0;padding:6px;background-color:#EEEEEE;color:#000000;}
+p.devpkg-message-fail	{margin:0;padding:6px;background-color:#FF0000;color:#FFFFFF;font-weight:bold;}
+p.devpkg-message-hidden	{display:none;}
 
-div.ezuser-fullName {
+div.devpkg-fullName {
 	float:right;
 	margin:4px 0 0 0;
 	padding:6px;
@@ -45,18 +45,18 @@ div.ezuser-fullName {
 	font-weight:bold;
 }
 
-form.ezuser-form		{margin:0;}
-fieldset.ezuser-fieldset	{margin:0;padding:0;border:0;clear:right;}
-label.ezuser-label		{float:right;padding:4px;}
+form.devpkg-form		{margin:0;}
+fieldset.devpkg-fieldset	{margin:0;padding:0;border:0;clear:right;}
+label.devpkg-label		{float:right;padding:4px;}
 
-input.ezuser-text {
+input.devpkg-text {
 	float:right;
 	font-size:11px;
 	width:160px;
 	margin-bottom:4px;
 }
 
-input.ezuser-button {
+input.devpkg-button {
 	float:right;
 	padding:2px;
 	font-family:Segoe UI, Calibri, Arial, Helvetica, sans-serif;
@@ -65,24 +65,24 @@ input.ezuser-button {
 	cursor:pointer;
 }
 
-input.ezuser-action {
+input.devpkg-action {
 	font-size:12px;
 	width:52px;
 	margin:0 0 0 6px;
 }
 
-input.ezuser-preference {
+input.devpkg-preference {
 	font-size:10px;
 	margin:4px 0 0 6px;
 }
 
-input.ezuser-preference-verbose {float:left;margin:0;}
+input.devpkg-preference-verbose {float:left;margin:0;}
 
-input.ezuser-buttonstate-0 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
-input.ezuser-buttonstate-1 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
-input.ezuser-buttonstate-2 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
-input.ezuser-buttonstate-3 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
-input.ezuser-buttonstate-4 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
-input.ezuser-buttonstate-5 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
-input.ezuser-buttonstate-6 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
-input.ezuser-buttonstate-7 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
+input.devpkg-buttonstate-0 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
+input.devpkg-buttonstate-1 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
+input.devpkg-buttonstate-2 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
+input.devpkg-buttonstate-3 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
+input.devpkg-buttonstate-4 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
+input.devpkg-buttonstate-5 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
+input.devpkg-buttonstate-6 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
+input.devpkg-buttonstate-7 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}

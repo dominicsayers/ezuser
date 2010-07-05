@@ -3,14 +3,14 @@
 
 <head>
 	<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
-	<title>ezUser registration page example - PHP/Object</title>
+	<title>DevPkg registration page example - PHP/Object</title>
 	<link rel="stylesheet" type="text/css" href="fouc.css" /> <!-- http://en.wikipedia.org/wiki/Flash_of_unstyled_content -->
 </head>
 
 <body>
 <?php
-	require_once '../ezuser.php';
-	ezUser::getContainer('account');
+	require_once '../devpkg.php';
+	DevPkg::getContainer('account');
 ?>
 </body>
 
