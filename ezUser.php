@@ -42,7 +42,7 @@
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.25.5 - Floating div dialog boxes
+ * @version	0.26.1 - Drag-and-drop dialog boxes
  */
 
 // The quality of this code has been improved greatly by using PHPLint
@@ -64,17 +64,221 @@ $ezuser_profile['received']	= ezuser_time();
 */
 
 /**
+ * Get and set application settings
+ *
+ * @package ezUser
+ * @version 1.16 (revision number of this common functions class only)
+ */
+interface I_ezUser_settings {
+	const	TYPE_HTML	= 'html',
+		TYPE_XML	= 'xml',
+		TYPE_JSON	= 'json',
+		TYPE_TEXT	= 'text',
+		TYPE_ARRAY	= 'array',
+		TYPE_FIELDSET	= 'fieldset',
+
+		SETTINGS	= 'settings',
+		REQUEST	= 'request';
+
+	public /*.array[string]string.*/	function	get_all	();
+	public /*.boolean.*/			function	exists	(/*.string.*/ $name);
+	public /*.string.*/			function	get	(/*.string.*/ $name);
+	public /*.string.*/			function	set	(/*.string.*/ $name, /*.string.*/ $value);
+	public /*.mixed.*/			function	REST	(/*.array[string]mixed.*/ $get, /*.string.*/ $type = self::TYPE_HTML);
+}
+
+/**
+ * Get and set application settings
+ *
+ * @package ezUser
+ */
+class ezUser_settings implements I_ezUser_settings {
+	private /*.string.*/			$filename;
+	private /*.array[string]string.*/	$settings;
+	private static /*.string.*/		function normalize	(/*.string.*/ $name)	{return preg_replace(array('/^"|"$/', '/ |\\./'), array('', '_'), $name);} // Strips quotes and replaces dot and space with underscore (so $name can be a PHP variable)
+	private static /*.boolean.*/		function is_tag		(/*.string.*/ $name)	{return ($name === htmlentities($name, ENT_QUOTES));}
+
+	public /*.void.*/ function __construct($package = 'ezuser') {
+		$filename	= ".$package-settings.php";
+		$this->filename	= $filename;
+		$settings	= /*.(array[string]string).*/ array();
+
+		if (is_file($filename)) {
+			$contents	= @file($filename, FILE_SKIP_EMPTY_LINES);
+
+			foreach ($contents as $line) {
+				$split			= strpos($line, '='); if ($split === false) continue;
+				$name			= self::normalize(trim(substr($line, 0, $split - 1)));
+				$value			= trim(substr($line, $split + 1));
+
+				if (self::is_tag($name)) $settings[$name] = $value;
+			}
+		}
+
+		$this->settings = $settings;
+	}
+
+	public /*.void.*/ function __destruct() {
+		$content	= '<?php header("Location: /"); ?'.">\n";
+		$settings	= $this->settings;
+
+		foreach ($settings as $name => $value) $content	.= "\t$name\t= $value\n";
+
+		$handle = @fopen($this->filename, 'wb');
+		if (is_bool($handle)) exit("Can't create settings file");
+		fwrite($handle, $content);
+		fclose($handle);
+		chmod($this->filename, 0600);
+	}
+
+	public /*.array[string]string.*/	function	get_all	()			{return $this->settings;}
+	public /*.boolean.*/			function	exists	(/*.string.*/ $name)	{return array_key_exists($name, $this->settings);}
+	public /*.string.*/			function	get	(/*.string.*/ $name)	{return (self::is_tag($name) && $this->exists($name)) ? $this->settings[$name] : '';}
+
+	public /*.string.*/ function set(/*.string.*/ $name, /*.string.*/ $value) {
+		$name	= strtolower(self::normalize(trim($name)));
+		$value	= self::normalize(trim($value));
+
+		if (!self::is_tag($name)) {
+			return '(illegal characters in setting name)';
+		} else if ($name === self::REQUEST) {
+			return '(Can\'t use "' . self::REQUEST . '" as a setting name)';
+		} else if ($value === '' || $value === '-') {
+			unset($this->settings[$name]);
+			return '(deleted)';
+		} else {
+			$this->settings[$name] = $value;
+			return $value;
+		}
+	}
+
+	private static /*.string.*/ function array_to_text(/*.array[string]string.*/ $output, /*.array[string]string.*/ $updated) {
+		if (count($output) === 1) return array_pop($output);
+
+		$text	= '';
+
+		foreach ($output as $name => $value) {
+			$updatedMarker	= (array_key_exists($name, $updated)) ? "\t*" : '';
+			$text .= "$name\t$value$updatedMarker\n";
+		}
+
+		return $text;
+	}
+
+	private static /*.string.*/ function array_to_HTML(/*.array[string]string.*/ $output, /*.array[string]string.*/ $updated) {
+		$html	= "\n<dl>\n";
+
+		foreach ($output as $name => $value) {
+			$updatedMarker	= (array_key_exists($name, $updated)) ? ' style="font-weight:bold;"' : '';
+			$html		.= "\t<dt>$name</dt><dd$updatedMarker>$value</dd>\n";
+		}
+
+		$html .= "</dl>\n";
+		return $html;
+	}
+
+	private static /*.DOMDocument.*/ function array_to_XML(/*.array[string]string.*/ $output, /*.array[string]string.*/ $updated) {
+		$xml	= "\n<settings>\n";
+
+		foreach ($output as $name => $value) {
+			$updatedMarker	= (array_key_exists($name, $updated)) ? ' updated="true"' : '';
+			$xml	.= "\t<$name$updatedMarker>$value</$name>\n";
+		}
+
+		$xml		.= "</settings>\n";
+		$document	= new DOMDocument();
+
+		$document->loadXML($xml);
+		return $document;
+	}
+
+	private static /*.string.*/ function array_to_JSON(/*.array[string]string.*/ $output, /*.array[string]string.*/ $updated) {
+		$json		= '{';
+		$delimiter	= '';
+
+		foreach ($output as $name => $value) {
+			// Canonical JSON doesn't support comments so we'll omit the Updated marker
+			$json		.= "$delimiter$name: \"$value\"";
+			$delimiter	= ', ';
+		}
+
+		$json .= '}';
+		return $json;
+	}
+
+	private static /*.string.*/ function array_to_fieldset(/*.array[string]string.*/ $output, /*.array[string]string.*/ $updated) {
+		$actionSettings	= self::SETTINGS;
+		$tagGroup	= "ezuser-$actionSettings";
+		$tabIndex	= 0;
+
+		$html		= <<<HTML
+
+<fieldset id="$tagGroup-fieldset" class="$tagGroup-fieldset">
+
+HTML;
+
+		foreach ($output as $name => $value) {
+			$updatedMarker	= (array_key_exists($name, $updated)) ? " $tagGroup-updated" : '';
+			$html		.= <<<HTML
+	<label	class		=	"ezuser-label $tagGroup-label$updatedMarker"
+		for		=	"$tagGroup-$name"	>
+		$name
+	</label>
+	<input	id		=	"$tagGroup-$name"
+		class		=	"ezuser-input $tagGroup-input$updatedMarker"
+		tabindex	=	"$tabIndex"
+		value		=	"$value"
+		type		=	"text"	/>
+
+HTML;
+
+			$tabIndex++;
+		}
+
+		$html .= "</fieldset>\n";
+		return $html;
+	}
+
+	public /*.mixed.*/ function REST(/*.array[string]mixed.*/ $get, /*.string.*/ $type = self::TYPE_TEXT, $show_all = false) {
+		$output		= /*.(array[string]string).*/ array();
+		$updated	= /*.(array[string]string).*/ array();
+
+		foreach ($get as $name => $value) {
+			$name = self::normalize($name);
+			if ($name === self::REQUEST) continue;
+
+			if (self::is_tag($name)) {
+				if ($value !== '') $updated[$name] = $this->set($name, (string) $value);
+				$output[$name] = $updated[$name];
+			} else {
+				$output['ERROR'] = "(Illegal characters in setting name $name)";
+			}
+		}
+
+		if (count($output) === 0) $output = $this->settings;
+
+		switch (strtolower($type)) {
+		case self::TYPE_ARRAY:		return ($show_all) ? $output : $updated;
+		case self::TYPE_TEXT:		return self::array_to_text	($output, $updated);
+		case self::TYPE_HTML:		return self::array_to_HTML	($output, $updated);
+		case self::TYPE_XML:		return self::array_to_XML	($output, $updated);
+		case self::TYPE_JSON:		return self::array_to_JSON	($output, $updated);
+		case self::TYPE_FIELDSET:	return self::array_to_fieldset	($output, $updated);
+		default:			return false;
+		}
+	}
+}
+// End of class ezUser_settings
+
+
+/**
  * Common utility functions
  *
  * @package ezUser
- * @version 1.14 (revision number of this common functions class only)
+ * @version 1.19 (revision number of this common functions class only)
  */
 
 interface I_ezUser_common {
-//	const	PACKAGE				= 'ezUser',
-//		VERSION				= '0.25', // Version 1.13: added
-// Version 1.14: PACKAGE & VERSION now hard-coded by build process.
-
 	const	HASH_FUNCTION			= 'SHA256',
 		URL_SEPARATOR			= '/',
 
@@ -88,13 +292,6 @@ interface I_ezUser_common {
 		URL_MODE_PORT			= 4,
 		URL_MODE_PATH			= 8,
 		URL_MODE_ALL			= 15,
-
-		// Behaviour settings for getPackage()
-//		PACKAGE_CASE_DEFAULT		= 0,
-////		PACKAGE_CASE_LOWER		= 0,
-//		PACKAGE_CASE_CAMEL		= 1,
-//		PACKAGE_CASE_UPPER		= 2,
-// Version 1.14: PACKAGE & VERSION now hard-coded by build process.
 
 		// Extra GLOB constant for safe_glob()
 		GLOB_NODIR			= 256,
@@ -139,10 +336,9 @@ interface I_ezUser_common {
 	public static /*.string.*/			function array_to_HTML(/*.array[]mixed.*/ $source = NULL);
 
 	// Session functions
-	public static /*.void.*/			function checkSession();
+	public static /*.void.*/			function checkSession();	// Version 1.18: Added
 
 	// Environment functions
-//	public static /*.string.*/			function getPackage($mode = self::PACKAGE_CASE_DEFAULT); // Version 1.14: PACKAGE & VERSION now hard-coded by build process.
 	public static /*.string.*/			function getURL($mode = self::URL_MODE_PATH, $filename = '');
 	public static /*.string.*/			function docBlock_to_HTML(/*.string.*/ $php);
 
@@ -160,7 +356,6 @@ interface I_ezUser_common {
 	public static /*.string.*/			function prkg(/*.int.*/ $index, /*.int.*/ $length = 6, /*.int.*/ $base = 34, /*.int.*/ $seed = 0);
 
 	// Validation functions
-//	public static /*.boolean.*/			function is_email(/*.string.*/ $email, $checkDNS = false);
 	public static /*.mixed.*/			function is_email(/*.string.*/ $email, $checkDNS = false, $diagnose = false); // New parameters from version 1.8
 }
 
@@ -436,31 +631,11 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 		return self::var_dump_to_HTML($var_dump);
 	}
 
+// Version 1.18: Added checkSession()
 /**
  * Check session is running. If not start one.
  */
 	public static /*.void.*/ function checkSession() {if (!isset($_SESSION) || !is_array($_SESSION) || (session_id() === '')) session_start();}
-
-///**
-// * Return the name of this package. By default this will be in lower case for use in Javascript tags etc.
-// *
-// * @param int $mode One of the <var>PACKAGE_CASE_XXX</var> predefined constants defined in this class
-// */
-//	public static /*.string.*/ function getPackage($mode = self::PACKAGE_CASE_DEFAULT) {
-//		switch ($mode) {
-//		case self::PACKAGE_CASE_CAMEL:
-//			$package = self::PACKAGE;
-//			break;
-//		case self::PACKAGE_CASE_UPPER:
-//			$package = strtoupper(self::PACKAGE);
-//			break;
-//		default:
-//			$package = strtolower(self::PACKAGE);
-//			break;
-//		}
-//
-//		return $package;
-//	}
 
 /**
  * Return all or part of the URL of the current script.
@@ -468,8 +643,9 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
  * @param int $mode One of the <var>URL_MODE_XXX</var> predefined constants defined in this class
  * @param string $filename If this is not empty then the returned script name is forced to be this filename.
  */
-	public static /*.string.*/ function getURL($mode = self::URL_MODE_PATH, $filename = 'ezUser') {
+	public static /*.string.*/ function getURL($mode = self::URL_MODE_PATH, $filename = '') {
 // Version 1.14: PACKAGE & VERSION now hard-coded by build process.
+// Version 1.16: Filename default is now '', was 'ezUser'
 		$portInteger = array_key_exists('SERVER_PORT', $_SERVER) ? (int) $_SERVER['SERVER_PORT'] : 0;
 
 		if (array_key_exists('HTTPS', $_SERVER) && $_SERVER['HTTPS'] === 'on') {
@@ -546,7 +722,6 @@ echo "</pre>\n"; // debug
  */
 	public static /*.string.*/ function docBlock_to_HTML(/*.string.*/ $php) {
 // Updated in version 1.12 (bug fixes and formatting)
-//		$package	= self::getPackage(self::PACKAGE_CASE_CAMEL); // Version 1.14: PACKAGE & VERSION now hard-coded by build process.
 		$eol		= "\r\n";
 		$tagStart	= strpos($php, "/**$eol * ");
 
@@ -571,13 +746,8 @@ echo "</pre>\n"; // debug
 			$value		= htmlspecialchars(substr($php, $tagEnd + 1, $tagPos - $tagEnd - 1));
 			$tagPos		= strpos($php, " * @", $offset);
 
-//			$$tag		= htmlspecialchars($value); // The easy way. But PHPlint doesn't like it, so...
-
-//			$package	= '';
-//			$summary	= '';
-//			$description	= '';
-
 			switch ($tag) {
+			case 'package':		$package	= $value; break; // Version 1.19: Remembered this one. Oops.
 			case 'license':		$license	= $value; break;
 			case 'author':		$author		= $value; break;
 			case 'link':		$link		= $value; break;
@@ -608,7 +778,7 @@ echo "</pre>\n"; // debug
 
 		// Build the HTML
 		$html = <<<HTML
-	<h1>ezUser</h1>
+	<h1>$package</h1> // Version 1.16 changed to $package from ezUser
 	<h2>$summary</h2>
 	<pre>$description</pre>
 	<hr />
@@ -789,7 +959,7 @@ HTML;
  * Shuffle an array using the Mersenne Twist PRNG (can be deterministically seeded)
  *
  */
-	public static /*.void.*/ function mt_shuffle_array(/*.array.*/ &$arr, /*.int.*/ $seed = 0) {
+	private static /*.void.*/ function mt_shuffle_array(/*.array.*/ &$arr, /*.int.*/ $seed = 0) {
 		$count	= count($arr);
 		$keys	= array_keys($arr);
 
@@ -875,17 +1045,17 @@ HTML;
 		//					    ^ base 34 recommended
 
 		// Is $base in range?
-		if ($base < 2)			{die('Base must be greater than or equal to 2');}
-		if ($base > 66)			{die('Base must be less than or equal to 66');}
+		if ($base < 2)			{exit('Base must be greater than or equal to 2');}
+		if ($base > 66)			{exit('Base must be less than or equal to 66');}
 
 		// Is $length in range?
-		if ($length < 1)		{die('Length must be greater than or equal to 1');}
+		if ($length < 1)		{exit('Length must be greater than or equal to 1');}
 		// Max length depends on arithmetic functions of PHP
 
 		// Is $index in range?
 		$max_index = (int) pow($base, $length);
-		if ($index < 0)			{die('Index must be greater than or equal to 0');}
-		if ($index > $max_index)	{die('Index must be less than or equal to ' . $max_index);}
+		if ($index < 0)			{exit('Index must be greater than or equal to 0');}
+		if ($index > $max_index)	{exit('Index must be less than or equal to ' . $max_index);}
 
 		// Seed the RNG with a deterministic seed
 		mt_srand($seed);
@@ -1346,9 +1516,9 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 		ACTION_BODY		= 'body',
 		ACTION_CANCEL		= 'cancel',
 		ACTION_CONTAINER	= 'container',
-		ACTION_DASHBOARD	= 'dashboard',
+//-		ACTION_DASHBOARD	= 'dashboard',
 		ACTION_JAVASCRIPT	= 'js',
-		ACTION_MAIN		= 'controlpanel',
+		ACTION_CONTROLPANEL	= 'controlpanel',
 		ACTION_RESEND		= 'resend',		// Resend verification email
 		ACTION_RESET		= 'reset',		// Process password reset link
 		ACTION_RESETPASSWORD	= 'resetpassword',	// Initiate password reset processing
@@ -1719,7 +1889,7 @@ interface I_ezUser_environment extends I_ezUser_base {
 
 		// Storage locations
 		STORAGE			= '.ezuser-data.php',
-		SETTINGS		= '.ezuser-settings.php',
+//-		SETTINGS		= '.ezuser-settings.php',
 		LOG			= '.ezuser-log.php',
 
 		// Keys for the configuration settings
@@ -1856,7 +2026,6 @@ HTML;
 	protected static /*.void.*/ function sendContent(/*.string.*/ $content, $container = '', $contentType = 'text/html') {
 		// Send headers first
 		if (!headers_sent()) {
-//			$package = 'ezuser';
 			if ($container === '') $container = 'ezuser';
 //header("Container-length: " . strlen($container)); // debug
 			header('Package: ezUser');
@@ -1938,7 +2107,7 @@ HTML;
 // Sign-in and session variables
 // ---------------------------------------------------------------------------
 	protected static /*.string.*/ function getInstanceId($container = 'ezuser') {
-		return ($container === self::ACTION_MAIN || $container === 'ezuser') ? 'ezuser' : "ezuser-$container";
+		return ($container === self::ACTION_CONTROLPANEL || $container === 'ezuser') ? 'ezuser' : "ezuser-$container";
 	}
 
 	protected static /*.void.*/ function setSessionObject(ezUser_base $ezUser, $instance = 'ezuser') {
@@ -2051,6 +2220,8 @@ self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 
 	private static /*.array[string]string.*/ function loadConfig() {
 		$ezUser		= self::getSessionObject();
+
+/* //-
 		$config		= $ezUser->config();
 		$settingsFile	= realpath(dirname(__FILE__) . self::URL_SEPARATOR . self::SETTINGS);
 
@@ -2071,7 +2242,11 @@ self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 				}
 			}
 		}
+*/
 
+		$settings	= new ezUser_settings();
+		$config		= $settings->get_all();
+		if (count($config) === 0) $config[self::SETTINGS_EMPTY] = self::STRING_TRUE;
 		$config[self::SETTINGS_PERSISTED] = self::STRING_TRUE;
 		$ezUser->setConfig($config);
 		return $config;
@@ -2448,12 +2623,12 @@ interface I_ezUser extends I_ezUser_environment {
 	public static /*.void.*/	function getResultForm		(/*.int.*/ $result, $more = '');
 //	public static /*.void.*/	function fatalError		(/*.int.*/ $result, $more = '');
 	public static /*.void.*/	function getAccountForm		($mode = '', $newUser = false);
-//	public static /*.void.*/	function getDashboard		();
+//-	public static /*.void.*/	function getControlPanelAuthenticated();
 //	public static /*.void.*/	function getSignInForm		();
 	public static /*.void.*/	function getControlPanel	($username = '');
 //	public static /*.void.*/	function getStyleSheet		();
 //	public static /*.void.*/	function getJavascript		($containerList = '');
-	public static /*.void.*/	function getContainer		($action = self::ACTION_MAIN);
+	public static /*.void.*/	function getContainer		($action = self::ACTION_CONTROLPANEL);
 	public static /*.void.*/	function getAbout		();
 	public static /*.void.*/	function getAboutText		();
 //	public static /*.void.*/	function getSourceCode		();
@@ -2515,7 +2690,7 @@ HTML;
 		if ($sendToBrowser) {self::sendContent($html); return '';} else return $html;
 	}
 
-	private static /*.string.*/ function htmlContainer($action = self::ACTION_MAIN, $sendToBrowser = false) {
+	private static /*.string.*/ function htmlContainer($action = self::ACTION_CONTROLPANEL, $sendToBrowser = false) {
 		$baseAction	= explode('=', $action);
 		$container	= self::getInstanceId($baseAction[0]);
 		$actionCommand	= self::ACTION;
@@ -2938,9 +3113,11 @@ HTML;
 		if ($sendToBrowser) {self::sendXML($html, $container); return '';} else return $html;
 	}
 
-// ---------------------------------------------------------------------------
-	private static /*.string.*/ function htmlDashboard($sendToBrowser = false) {
-		$action			= self::ACTION_DASHBOARD;
+/**
+ * HTML for control panel when user is authenticated
+ */
+	private static /*.string.*/ function htmlControlPanelAuthenticated($sendToBrowser = false) {
+		$action			= self::ACTION_CONTROLPANEL;
 		$actionSignOut		= self::ACTION_SIGNOUT;
 		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
 		$tagFullName		= self::TAGNAME_FULLNAME;
@@ -2968,6 +3145,46 @@ $message
 		</form>
 HTML;
 
+		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
+	}
+
+/**
+ * HTML for control panel when user is not authenticated
+ */
+	private static /*.string.*/ function htmlControlPanelNotAuthenticated($sendToBrowser = false) {
+		$action			= self::ACTION_CONTROLPANEL;
+		$actionSignIn		= self::ACTION_SIGNIN;
+		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
+		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
+		$message		= self::htmlMessage();
+
+		$html = <<<HTML
+		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset">
+				<input id="ezuser-$actionAccountForm" data-ezuser-action="$actionAccountForm" value="Register"
+					tabindex	=	"3222"
+$htmlButtonPreference
+				/>
+				<input id="ezuser-$actionSignIn" data-ezuser-action="$actionSignIn" value="Login"
+					tabindex	=	"3221"
+$htmlButtonPreference
+				/>
+			</fieldset>
+			<fieldset class="ezuser-fieldset">
+$message
+			</fieldset>
+		</form>
+HTML;
+
+		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
+	}
+
+	/**
+ * HTML for control panel
+ */
+	private static /*.string.*/ function htmlControlPanel($sendToBrowser = false) {
+		$ezUser = self::getSessionObject();
+		$html = ($ezUser->authenticated()) ? self::htmlControlPanelAuthenticated() : self::htmlControlPanelNotAuthenticated();
 		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
 	}
 
@@ -3071,18 +3288,11 @@ HTML;
 	}
 
 // ---------------------------------------------------------------------------
-	private static /*.string.*/ function htmlControlPanel($username = '', $sendToBrowser = false) {
-		$ezUser = self::getSessionObject();
-		$html = ($ezUser->authenticated()) ? self::htmlDashboard() : self::htmlSignInForm($username);
-		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
-	}
-
-// ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlResetRequest ($username = '', $sendToBrowser = false) {
 		$action			= self::ACTION_RESETREQUEST;
 		$actionCancel		= self::ACTION_CANCEL;
 		$actionResetPassword	= self::ACTION_RESETPASSWORD;
-		$actionMain		= self::ACTION_MAIN;
+		$actionControlPanel	= self::ACTION_CONTROLPANEL;
 		$tagUsername		= self::TAGNAME_USERNAME;
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
 		$stringLeft		= self::STRING_LEFT;
@@ -3100,7 +3310,7 @@ $htmlInputText
 				/>
 			</fieldset>
 			<fieldset class="ezuser-fieldset">
-				<input id="ezuser-$actionCancel" data-ezuser-action="$actionMain" value="Cancel"
+				<input id="ezuser-$actionCancel" data-ezuser-action="$actionControlPanel" value="Cancel"
 					tabindex	=	"3243"
 $htmlButtonPreference
 				/>
@@ -3198,8 +3408,8 @@ HTML;
 	}
 
 // ---------------------------------------------------------------------------
-	private static /*.string.*/ function htmlMessageForm ($message = '', $action = self::ACTION_MAIN, $sendToBrowser = false) {
-		$actionMain		= self::ACTION_MAIN;
+	private static /*.string.*/ function htmlMessageForm ($message = '', $action = self::ACTION_CONTROLPANEL, $sendToBrowser = false) {
+		$actionControlPanel	= self::ACTION_CONTROLPANEL;
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
 		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_TEXT, '', self::MESSAGE_TYPE_TEXT);
 
@@ -3207,7 +3417,7 @@ HTML;
 		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
 			<fieldset class="ezuser-fieldset">
 $message
-				<input id="ezuser-OK" data-ezuser-action="$actionMain" value="OK"
+				<input id="ezuser-OK" data-ezuser-action="$actionControlPanel" value="OK"
 					tabindex	=	"3241"
 $htmlButtonPreference
 				/>
@@ -3248,7 +3458,7 @@ HTML;
  * Other MIME types: CSS, Javascript, bitmaps
  */
 	private static /*.string.*/ function htmlStyleSheet(/*.boolean.*/ $sendToBrowser = false) {
-		$container		= self::getInstanceId(self::ACTION_ACCOUNT);
+		$accountForm		= self::getInstanceId(self::ACTION_ACCOUNT);
 		$tagFullName		= self::TAGNAME_FULLNAME;
 		$tagVerbose		= self::TAGNAME_VERBOSE;
 		$buttonTypeAction	= self::BUTTON_TYPE_ACTION;
@@ -3299,7 +3509,7 @@ HTML;
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.25.5 - Floating div dialog boxes
+ * @version	0.26.1 - Drag-and-drop dialog boxes
  */
 
 .dummy {} /* Webkit is ignoring the first item so we'll put a dummy one in */
@@ -3327,7 +3537,7 @@ img#ezuser-close {
 	top:-25px;
 }
 
-div#ezuser {
+div.ezuser-float {
 	text-align: left;
 	width: 300px;
 	height: 100px;
@@ -3351,7 +3561,7 @@ div#ezuser {
 	background-color:#EEEEEE;
 }
 
-div#$container {
+div#$accountForm {
 	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
 	font-size:12px;
 	line-height:100%;
@@ -3385,6 +3595,19 @@ div.ezuser-$tagFullName {
 	padding:6px;
 	color:#555555;
 	font-weight:bold;
+}
+
+a.ezuser-keydragdrop:link {
+	position:absolute;
+	height:16px;
+	width:16px;
+	top:114px;
+	left:7px;
+	cursor:move;
+	font-size:16px;
+	text-decoration:none;
+	color:#AAAAAA;
+	display:none; /* Remove this line to enable keyboard drag-and-drop for accessibility */
 }
 
 form.ezuser-form			{margin:0;}
@@ -3543,7 +3766,7 @@ GENERATED;
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.25.5 - Floating div dialog boxes
+ * @version	0.26.1 - Drag-and-drop dialog boxes
  */
 
 /*jslint eqeqeq: true, immed: true, nomen: true, onevar: true, regexp: true, undef: true */
@@ -3692,59 +3915,236 @@ function SHA256(s){
 	var that = this;
 
 // ---------------------------------------------------------------------------
-	function fireEvent(control, eventType, detail) {
-		var e, result; // Returned result from dispatchEvent
+	this.classNames = {
+		list: function(control) {
+			return (control.className) ? control.className.split(' ') : [];
+		},
 
-		switch (eventType.toLowerCase()) {
-		case 'keyup':
-		case 'keydown':
-			if (document.createEventObject) {
-				// IE
-				e		= document.createEventObject();
-				e.keyCode	= detail;
-				result		= control.fireEvent('on' + eventType);
-			} else if (window.KeyEvent) {
-				// Firefox
-				e		= document.createEvent('KeyEvents');
-				e.initKeyEvent(eventType, true, true, window, false, false, false, false, detail, 0);
-				result		= control.dispatchEvent(e);
-			} else {
-				e		= document.createEvent('UIEvents');
-				e.initUIEvent(eventType, true, true, window, 1);
-				e.keyCode	= detail;
-				result		= control.dispatchEvent(e);
+		findIndex: function(control, name, remove) {
+			var	classList	= this.list(control),
+				index		= false,
+				count		= classList.length,
+				nameLower	= name.toLowerCase(),
+				i;
+
+			if (arguments.length < 3) {remove = false;} // Assume we aren't going to remove the class name
+
+			for (i = 0; i < count; i++) {
+				if (nameLower === classList[i].toLowerCase()) {
+					index = i;
+					break;
+				}
 			}
 
-			break;
-		case 'focus':
-		case 'blur':
-		case 'change':
-			if (document.createEventObject) {
-				// IE
-				e		= document.createEventObject();
-				result		= control.fireEvent('on' + eventType);
-			} else {
-				e		= document.createEvent('UIEvents');
-				e.initUIEvent(eventType, true, true, window, 1);
-				result		= control.dispatchEvent(e);
+			if (remove && (index !== false)) {
+				classList.splice(index, 1);
+				control.className = classList.join(' ');
 			}
 
-			break;
-		case 'click':
-			if (document.createEventObject) {
-				// IE
-				e		= document.createEventObject();
-				result		= control.fireEvent('on' + eventType);
-			} else {
-				e		= document.createEvent('MouseEvents');
-				e.initMouseEvent(eventType, true, true, window, 1);
-				result		= control.dispatchEvent(e);
-			}
+			return index;
+		},
 
-			break;
+		add: function(control, name) {
+			if (this.findIndex(control, name) === false) control.className = (control.className) ? control.className + ' ' + name : name;
+		},
+
+		remove: function(control, name) {
+			this.findIndex(control, name, true);
 		}
+	}
 
-		return result;
+	this.event = {
+		add: function (control, eventName, functionHandle) {
+			if	(control.addEventListener)	{control.addEventListener(eventName, functionHandle, false);}
+			else if	(control.attachEvent)		{control.attachEvent('on' + eventName, functionHandle);}
+		},
+
+		remove: function (control, eventName, functionHandle) {
+			if	(control.removeEventListener)	{control.removeEventListener(eventName, functionHandle, false);}
+			else if	(control.detachEvent)		{control.detachEvent('on' + eventName, functionHandle);}
+		},
+
+		fire: function(control, eventType, detail) {
+			var e, result; // Returned result from dispatchEvent
+
+			switch (eventType.toLowerCase()) {
+			case 'keyup':
+			case 'keydown':
+				if (document.createEventObject) {
+					// IE
+					e		= document.createEventObject();
+					e.keyCode	= detail;
+					result		= control.fireEvent('on' + eventType);
+				} else if (window.KeyEvent) {
+					// Firefox
+					e		= document.createEvent('KeyEvents');
+					e.initKeyEvent(eventType, true, true, window, false, false, false, false, detail, 0);
+					result		= control.dispatchEvent(e);
+				} else {
+					e		= document.createEvent('UIEvents');
+					e.initUIEvent(eventType, true, true, window, 1);
+					e.keyCode	= detail;
+					result		= control.dispatchEvent(e);
+				}
+
+				break;
+			case 'focus':
+			case 'blur':
+			case 'change':
+				if (document.createEventObject) {
+					// IE
+					e		= document.createEventObject();
+					result		= control.fireEvent('on' + eventType);
+				} else {
+					e		= document.createEvent('UIEvents');
+					e.initUIEvent(eventType, true, true, window, 1);
+					result		= control.dispatchEvent(e);
+				}
+
+				break;
+			case 'click':
+				if (document.createEventObject) {
+					// IE
+					e		= document.createEventObject();
+					result		= control.fireEvent('on' + eventType);
+				} else {
+					e		= document.createEvent('MouseEvents');
+					e.initMouseEvent(eventType, true, true, window, 1);
+					result		= control.dispatchEvent(e);
+				}
+
+				break;
+			}
+
+			return result;
+		}
+	}
+
+	this.dragDrop = {
+		keyHTML:	'<a href="#" class="ezuser-keydragdrop" tabindex="3300">&#9000;</a>',
+		keySpeed:	10, // pixels per keypress event
+		initialMouseX:	undefined,
+		initialMouseY:	undefined,
+		startX:		undefined,
+		startY:		undefined,
+		dXKeys:		undefined,
+		dYKeys:		undefined,
+		draggedObject:	undefined,
+
+		initElement: function (control) {
+			if (typeof control == 'string') {control = document.getElementById(control);}
+
+			control.onmousedown	= that.dragDrop.startDragMouse;
+			control.innerHTML	+= that.dragDrop.keyHTML;
+
+			var	links		= control.getElementsByTagName('a'),
+				lastLink	= links[links.length-1];
+
+			lastLink.relatedElement	= control;
+			lastLink.onclick	= that.dragDrop.startDragKeys;
+		},
+
+		startDragMouse: function (e) {
+			that.dragDrop.startDrag(this);
+
+			var	thisEvent		= e || window.event;
+
+			that.dragDrop.initialMouseX	= thisEvent.clientX;
+			that.dragDrop.initialMouseY	= thisEvent.clientY;
+
+			that.event.add(document, 'mousemove', that.dragDrop.dragMouse);
+			that.event.add(document, 'mouseup', that.dragDrop.releaseElement);
+			return false;
+		},
+
+		startDragKeys: function () {
+			that.dragDrop.startDrag(this.relatedElement);
+
+			that.dragDrop.dXKeys		= that.dragDrop.dYKeys = 0;
+
+			that.event.add(document, 'keydown', that.dragDrop.dragKeys);
+			that.event.add(document, 'keypress', that.dragDrop.switchKeyEvents);
+
+			this.blur();
+			return false;
+		},
+
+		startDrag: function (control) {
+			if (that.dragDrop.draggedObject) {that.dragDrop.releaseElement();}
+
+			that.dragDrop.startX		= control.offsetLeft;
+			that.dragDrop.startY		= control.offsetTop;
+			that.dragDrop.draggedObject	= control;
+			that.classNames.add(control, 'dragged');
+			control.style.cursor		= 'move';
+		},
+
+		dragMouse: function (e) {
+			var	thisEvent	= e || window.event,
+				dX		= thisEvent.clientX - that.dragDrop.initialMouseX,
+				dY		= thisEvent.clientY - that.dragDrop.initialMouseY;
+
+			that.dragDrop.setPosition(dX, dY);
+			return false;
+		},
+
+		dragKeys: function(e) {
+			var	thisEvent	= e || window.event,
+				key		= thisEvent.keyCode;
+
+			switch (key) {
+			case 37:	// left
+			case 63234:
+				that.dragDrop.dXKeys -= that.dragDrop.keySpeed;
+				break;
+			case 38:	// up
+			case 63232:
+				that.dragDrop.dYKeys -= that.dragDrop.keySpeed;
+				break;
+			case 39:	// right
+			case 63235:
+				that.dragDrop.dXKeys += that.dragDrop.keySpeed;
+				break;
+			case 40:	// down
+			case 63233:
+				that.dragDrop.dYKeys += that.dragDrop.keySpeed;
+				break;
+			case 13: 	// enter
+			case 27: 	// escape
+				that.dragDrop.releaseElement();
+				return false;
+			default:
+				return true;
+			}
+
+			that.dragDrop.setPosition(that.dragDrop.dXKeys, that.dragDrop.dYKeys);
+
+			if (thisEvent.preventDefault) {thisEvent.preventDefault();}
+			return false;
+		},
+
+		setPosition: function (dx, dy) {
+			that.dragDrop.draggedObject.style.left		= that.dragDrop.startX + dx + 'px';
+			that.dragDrop.draggedObject.style.top		= that.dragDrop.startY + dy + 'px';
+		},
+
+		switchKeyEvents: function () {
+			// for Opera and Safari 1.3
+			that.event.remove(document, 'keydown',		that.dragDrop.dragKeys);
+			that.event.remove(document, 'keypress',		that.dragDrop.switchKeyEvents);
+			that.event.add(document, 'keypress',		that.dragDrop.dragKeys);
+		},
+		releaseElement: function() {
+			that.event.remove(document, 'mousemove',	that.dragDrop.dragMouse);
+			that.event.remove(document, 'mouseup',		that.dragDrop.releaseElement);
+			that.event.remove(document, 'keypress',		that.dragDrop.dragKeys);
+			that.event.remove(document, 'keypress',		that.dragDrop.switchKeyEvents);
+			that.event.remove(document, 'keydown',		that.dragDrop.dragKeys);
+
+			that.classNames.remove(that.dragDrop.draggedObject, 'dragged');
+			that.dragDrop.draggedObject.style.cursor	= 'auto';
+			that.dragDrop.draggedObject			= null;
+		}
 	}
 
 // ---------------------------------------------------------------------------
@@ -3753,10 +4153,10 @@ function SHA256(s){
 
 		if (control.disabled) {return;}
 
-		if (typeof document.activeElement.onBlur === 'function') {fireEvent(document.activeElement, 'blur');}
-		if (typeof document.activeElement.onblur === 'function') {fireEvent(document.activeElement, 'blur');}
-		if (typeof control.onFocus === 'function') {doEvent = fireEvent(control, 'focus');}
-		if (typeof control.onfocus === 'function') {doEvent = fireEvent(control, 'focus');}
+		if (typeof document.activeElement.onBlur === 'function') {this.event.fire(document.activeElement, 'blur');}
+		if (typeof document.activeElement.onblur === 'function') {this.event.fire(document.activeElement, 'blur');}
+		if (typeof control.onFocus === 'function') {doEvent = this.event.fire(control, 'focus');}
+		if (typeof control.onfocus === 'function') {doEvent = this.event.fire(control, 'focus');}
 		if (doEvent !== false) {control.focus();}
 		control.select();
 	}
@@ -3999,8 +4399,6 @@ function SHA256(s){
 					} else {
 						that.fillContainerText(id, this.responseText);
 					}
-
-					that.dialog(id).position();
 				} else {
 					fail		= true;
 					message		= 'Server error, please try later';
@@ -4119,7 +4517,7 @@ function SHA256(s){
 		changePage: function (delta) {
 			var nextPageId, nextPage;
 
-			if (this.getValue('$accountForm-$tagWizard') === '$stringFalse') {return;}	// Not in wizard mode
+			if (that.getValue('$accountForm-$tagWizard') === '$stringFalse') {return;}	// Not in wizard mode
 
 			this.page = (arguments.length === 0) ? 1 : this.page + delta;
 			if (this.page < 1) {this.page = 1;}
@@ -4334,14 +4732,20 @@ function SHA256(s){
 			containerList = document.getElementsByTagName(id);
 
 			if (containerList === null || typeof containerList === 'undefined' || containerList.length === 0) {
-				window.alert('Can\\'t find a container \\'' + id + '\\' for this content: ' + html.substring(0, 256));
-				return;
+//-				window.alert('Can\\'t find a container \\'' + id + '\\' for this content: ' + html.substring(0, 256));
+//-				return;
+//- Fuck it, just append a container
+				container		= document.createElement('div');
+				container.id		= id;
+				container.className	= 'ezuser-float'; // Assume it's a floater
+
+				document.getElementsByTagName('body')[0].appendChild(container);
 			} else {
 				container = containerList[0];
 			}
 		}
 
-		if (container.className.length === 0) {container.className = id;} // IE6 uses container.class
+		that.classNames.add(container, id);
 
 		container.innerHTML	= html;
 		formList		= container.getElementsByTagName('form');
@@ -4349,6 +4753,8 @@ function SHA256(s){
 
 		switch (formId) {
 		case 'ezuser-$actionSignIn-form':
+			this.dialog(id).position();
+			this.dragDrop.initElement(id);
 			this.cookies.showPreferences();
 
 			if (this.cookies.rememberMe) {
@@ -4359,6 +4765,8 @@ function SHA256(s){
 
 			break;
 		case '$accountForm-form':
+			this.dialog(id).position();
+			this.dragDrop.initElement(id);
 			this.wizard.initialize(); // Set wizard to page 1
 			this.usernameDefault_Account = (this.getValue('$accountForm-$tagUsername') === '');
 			this.passwordDefault_Account = (this.getValue('$accountForm-$tagNewUser') !== '$stringTrue');
@@ -4705,7 +5113,7 @@ HTML;
 
 		// Sign out then check if a post-signout function has been registered
 		$ezUser->authenticate();		// Sign out
-		$ezUser->addSignOutAction(self::ACTION_MAIN);
+		$ezUser->addSignOutAction(self::ACTION_CONTROLPANEL);
 		$signOutActions = $ezUser->signOutActions();
 		self::setSessionObject(new ezUser_base(), self::ACTION_ACCOUNT);
 		self::doActions(array(self::ACTION => $signOutActions));
@@ -4718,8 +5126,13 @@ HTML;
 		$html = '';
 
 		switch ($action) {
+		case self::ACTION_CONTROLPANEL:		$html = self::htmlControlPanel		($sendToBrowser);				break;
+		case self::ACTION_STYLESHEET:		$html = self::htmlStyleSheet		($sendToBrowser);				break;
+		case self::ACTION_BODY:			$html = self::htmlSecureContent		($sendToBrowser);				break;
+		case self::ACTION_ABOUT:		$html = self::htmlAbout			($sendToBrowser);				break;
+		case self::ACTION_ABOUTTEXT:		$html = self::htmlAboutText		($sendToBrowser);				break;
+		case self::ACTION_SOURCECODE:		$html = self::htmlSourceCode		($sendToBrowser);				break;
 		case self::ACTION_CONTAINER:		$html = self::htmlContainer		($id,			$sendToBrowser);	break;
-		case self::ACTION_MAIN:			$html = self::htmlControlPanel		($id,			$sendToBrowser);	break;
 		case self::ACTION_BITMAP:		$html = self::inlineBitmap		($id,			$sendToBrowser);	break;
 		case self::ACTION_RESETREQUEST:		$html = self::htmlResetRequest		($id,			$sendToBrowser);	break;
 		case self::ACTION_ACCOUNT:		$html = self::htmlAccountForm		($id, false, false,	$sendToBrowser);	break;
@@ -4729,11 +5142,6 @@ HTML;
 		case self::ACTION_RESULTFORM:		$html = self::htmlResultForm		((int) $id, '',		$sendToBrowser);	break;
 		case self::ACTION_RESEND:		$html = self::verify_renotify		($id,			$sendToBrowser);	break;
 		case self::ACTION_JAVASCRIPT:		$html = self::htmlJavascript		($id,			$sendToBrowser);	break;
-		case self::ACTION_STYLESHEET:		$html = self::htmlStyleSheet		($sendToBrowser);				break;
-		case self::ACTION_BODY:			$html = self::htmlSecureContent		($sendToBrowser);				break;
-		case self::ACTION_ABOUT:		$html = self::htmlAbout			($sendToBrowser);				break;
-		case self::ACTION_ABOUTTEXT:		$html = self::htmlAboutText		($sendToBrowser);				break;
-		case self::ACTION_SOURCECODE:		$html = self::htmlSourceCode		($sendToBrowser);				break;
 		case self::ACTION_VERIFY:		self::verify				($id);						break;
 		case self::ACTION_RESETPASSWORD:	self::passwordReset_validate		($id);						break;
 		case self::ACTION_RESET:		self::passwordReset_reset		($id);						break;
@@ -4808,12 +5216,12 @@ HTML;
 //	public static /*.void.*/ function getResultDescription	(/*.int.*/ $result, $more = '')			{self::resultDescription($result, $more,		true);}
 	public static /*.void.*/ function getResultForm		(/*.int.*/ $result, $more = '')			{self::htmlResultForm($result, $more,			true);}
 	public static /*.void.*/ function getAccountForm	($mode = '', $newUser = false, $wizard = false)	{self::htmlAccountForm($mode, $newUser, $wizard,	true);}
-//	public static /*.void.*/ function getDashboard		()						{self::htmlDashboard(					true);}
+//-	public static /*.void.*/ function getControlPanelAuthenticated ()					{self::htmlControlPanelAuthenticated(			true);}
 //	public static /*.void.*/ function getSignInForm		()						{self::htmlSignInForm(					true);}
 	public static /*.void.*/ function getControlPanel	($username = '')				{self::htmlControlPanel($username,			true);}
 //	public static /*.void.*/ function getStyleSheet		()						{self::htmlStyleSheet(					true);}
 //	public static /*.void.*/ function getJavascript		($containerList = '')				{self::htmlJavascript($containerList,			true);}
-	public static /*.void.*/ function getContainer		($action = self::ACTION_MAIN)			{self::htmlContainer($action,				true);}
+	public static /*.void.*/ function getContainer		($action = self::ACTION_CONTROLPANEL)		{self::htmlContainer($action,				true);}
 	public static /*.void.*/ function getAbout		()						{self::htmlAbout(					true);}
 	public static /*.void.*/ function getAboutText		()						{self::htmlAboutText(					true);}
 //	public static /*.void.*/ function getSourceCode		()						{self::htmlSourceCode(					true);}
