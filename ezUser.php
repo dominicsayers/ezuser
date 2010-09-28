@@ -42,11 +42,11 @@
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.26.1 - Drag-and-drop dialog boxes
+ * @version	0.27.5 - PHPLint is even tighter, so some code style changes were necessary
  */
 
 // The quality of this code has been improved greatly by using PHPLint
-// PHPLint is copyright (c) 2009 Umberto Salsi
+// PHPLint is copyright (c) 2009-2010 Umberto Salsi
 // PHPLint is free software; see the license for copying conditions.
 // More info: http://www.icosaedro.it/phplint/
 /*.
@@ -67,7 +67,7 @@ $ezuser_profile['received']	= ezuser_time();
  * Get and set application settings
  *
  * @package ezUser
- * @version 1.16 (revision number of this common functions class only)
+ * @version 1.18 (revision number of this common functions class only)
  */
 interface I_ezUser_settings {
 	const	TYPE_HTML	= 'html',
@@ -78,7 +78,7 @@ interface I_ezUser_settings {
 		TYPE_FIELDSET	= 'fieldset',
 
 		SETTINGS	= 'settings',
-		REQUEST	= 'request';
+		REQUEST		= 'request';
 
 	public /*.array[string]string.*/	function	get_all	();
 	public /*.boolean.*/			function	exists	(/*.string.*/ $name);
@@ -98,8 +98,9 @@ class ezUser_settings implements I_ezUser_settings {
 	private static /*.string.*/		function normalize	(/*.string.*/ $name)	{return preg_replace(array('/^"|"$/', '/ |\\./'), array('', '_'), $name);} // Strips quotes and replaces dot and space with underscore (so $name can be a PHP variable)
 	private static /*.boolean.*/		function is_tag		(/*.string.*/ $name)	{return ($name === htmlentities($name, ENT_QUOTES));}
 
-	public /*.void.*/ function __construct($package = 'ezuser') {
-		$filename	= ".$package-settings.php";
+	public /*.void.*/ function __construct($filename = '') {
+// Revision 1.7: $filename parameter added
+		if ($filename === '') $filename	= '.ezuser-settings.php';
 		$this->filename	= $filename;
 		$settings	= /*.(array[string]string).*/ array();
 
@@ -118,7 +119,7 @@ class ezUser_settings implements I_ezUser_settings {
 		$this->settings = $settings;
 	}
 
-	public /*.void.*/ function __destruct() {
+	public /*.void.*/ function _destruct() {
 		$content	= '<?php header("Location: /"); ?'.">\n";
 		$settings	= $this->settings;
 
@@ -153,7 +154,7 @@ class ezUser_settings implements I_ezUser_settings {
 	}
 
 	private static /*.string.*/ function array_to_text(/*.array[string]string.*/ $output, /*.array[string]string.*/ $updated) {
-		if (count($output) === 1) return array_pop($output);
+		if (count($output) === 1) return (string) array_pop($output);
 
 		$text	= '';
 
@@ -271,11 +272,15 @@ HTML;
 // End of class ezUser_settings
 
 
+// PHPLint
+/*.unchecked.*/ class ezUserException extends Exception {}
+/*.forward mixed function cast(string $type, mixed $variable);.*/
+
 /**
  * Common utility functions
  *
  * @package ezUser
- * @version 1.19 (revision number of this common functions class only)
+ * @version 1.22 (revision number of this common functions class only)
  */
 
 interface I_ezUser_common {
@@ -300,36 +305,54 @@ interface I_ezUser_common {
 		GLOB_RECURSE			= 2048,
 
 		// Email validation constants
+		// No errors
 		ISEMAIL_VALID			= 0,
-		ISEMAIL_TOOLONG			= 1,
-		ISEMAIL_NOAT			= 2,
-		ISEMAIL_NOLOCALPART		= 3,
-		ISEMAIL_NODOMAIN		= 4,
-		ISEMAIL_ZEROLENGTHELEMENT	= 5,
-		ISEMAIL_BADCOMMENT_START	= 6,
-		ISEMAIL_BADCOMMENT_END		= 7,
-		ISEMAIL_UNESCAPEDDELIM		= 8,
-		ISEMAIL_EMPTYELEMENT		= 9,
-		ISEMAIL_UNESCAPEDSPECIAL	= 10,
-		ISEMAIL_LOCALTOOLONG		= 11,
-		ISEMAIL_IPV4BADPREFIX		= 12,
-		ISEMAIL_IPV6BADPREFIXMIXED	= 13,
-		ISEMAIL_IPV6BADPREFIX		= 14,
-		ISEMAIL_IPV6GROUPCOUNT		= 15,
-		ISEMAIL_IPV6DOUBLEDOUBLECOLON	= 16,
-		ISEMAIL_IPV6BADCHAR		= 17,
-		ISEMAIL_IPV6TOOMANYGROUPS	= 18,
-		ISEMAIL_TLD			= 19,
-		ISEMAIL_DOMAINEMPTYELEMENT	= 20,
-		ISEMAIL_DOMAINELEMENTTOOLONG	= 21,
-		ISEMAIL_DOMAINBADCHAR		= 22,
-		ISEMAIL_DOMAINTOOLONG		= 23,
-		ISEMAIL_TLDNUMERIC		= 24,
-		ISEMAIL_DOMAINNOTFOUND		= 25;
-//		ISEMAIL_NOTDEFINED		= 99;
+		// Warnings (valid address but unlikely in the real world)
+		ISEMAIL_WARNING			= 64,
+		ISEMAIL_TLD			= 65,
+		ISEMAIL_TLDNUMERIC		= 66,
+		ISEMAIL_QUOTEDSTRING		= 67,
+		ISEMAIL_COMMENTS		= 68,
+		ISEMAIL_FWS			= 69,
+		ISEMAIL_ADDRESSLITERAL		= 70,
+		ISEMAIL_UNLIKELYINITIAL		= 71,
+		ISEMAIL_SINGLEGROUPELISION	= 72,
+		ISEMAIL_DOMAINNOTFOUND		= 73,
+		ISEMAIL_MXNOTFOUND		= 74,
+		// Errors (invalid address)
+		ISEMAIL_ERROR			= 128,
+		ISEMAIL_TOOLONG			= 129,
+		ISEMAIL_NOAT			= 130,
+		ISEMAIL_NOLOCALPART		= 131,
+		ISEMAIL_NODOMAIN		= 132,
+		ISEMAIL_ZEROLENGTHELEMENT	= 133,
+		ISEMAIL_BADCOMMENT_START	= 134,
+		ISEMAIL_BADCOMMENT_END		= 135,
+		ISEMAIL_UNESCAPEDDELIM		= 136,
+		ISEMAIL_EMPTYELEMENT		= 137,
+		ISEMAIL_UNESCAPEDSPECIAL	= 138,
+		ISEMAIL_LOCALTOOLONG		= 139,
+		ISEMAIL_IPV4BADPREFIX		= 140,
+		ISEMAIL_IPV6BADPREFIXMIXED	= 141,
+		ISEMAIL_IPV6BADPREFIX		= 142,
+		ISEMAIL_IPV6GROUPCOUNT		= 143,
+		ISEMAIL_IPV6DOUBLEDOUBLECOLON	= 144,
+		ISEMAIL_IPV6BADCHAR		= 145,
+		ISEMAIL_IPV6TOOMANYGROUPS	= 146,
+		ISEMAIL_DOMAINEMPTYELEMENT	= 147,
+		ISEMAIL_DOMAINELEMENTTOOLONG	= 148,
+		ISEMAIL_DOMAINBADCHAR		= 149,
+		ISEMAIL_DOMAINTOOLONG		= 150,
+		ISEMAIL_IPV6SINGLECOLONSTART	= 151,
+		ISEMAIL_IPV6SINGLECOLONEND	= 152,
+		// Unexpected errors
+		ISEMAIL_BADPARAMETER		= 190,
+		ISEMAIL_NOTDEFINED		= 191;
 
 	// Basic utility functions
 	public static /*.string.*/			function strleft(/*.string.*/ $haystack, /*.string.*/ $needle);
+	public static /*.mixed.*/			function reescape(/*.mixed.*/ $literal);
+	public static /*.string.*/			function gettype(/*.mixed.*/ $variable);
 	public static /*.mixed.*/			function getInnerHTML(/*.string.*/ $html, /*.string.*/ $tag);
 	public static /*.array[string][string]string.*/	function meta_to_array(/*.string.*/ $html);
 	public static /*.string.*/			function var_dump_to_HTML(/*.string.*/ $var_dump, $offset = 0);
@@ -352,11 +375,11 @@ interface I_ezUser_common {
 	public static /*.string.*/			function makeId();
 	public static /*.string.*/			function makeUniqueKey(/*.string.*/ $id);
 	public static /*.string.*/			function mt_shuffle(/*.string.*/ $str, /*.int.*/ $seed = 0);
-//	public static /*.void.*/			function mt_shuffle_array(/*.array.*/ &$arr, /*.int.*/ $seed = 0);
+//	public static /*.void.*/			function mt_shuffle_array(/*.array.*/ &$shuffle, /*.int.*/ $seed = 0);
 	public static /*.string.*/			function prkg(/*.int.*/ $index, /*.int.*/ $length = 6, /*.int.*/ $base = 34, /*.int.*/ $seed = 0);
 
 	// Validation functions
-	public static /*.mixed.*/			function is_email(/*.string.*/ $email, $checkDNS = false, $diagnose = false); // New parameters from version 1.8
+	public static /*.mixed.*/			function is_email(/*.string.*/ $email, $checkDNS = false, /*.mixed.*/ $errorlevel = false);	// Revision 1.20: Parameter name changed
 }
 
 /**
@@ -368,7 +391,8 @@ abstract class ezUser_common implements I_ezUser_common {
  *
  * @param string $haystack The string containing the search term
  * @param string $needle The end point of the returned string. In other words, if <var>needle</var> is found then the begging of <var>haystack</var> is returned up to the character before <needle>.
- * @param int $mode If <var>needle</var> is not found then <pre>FALSE</pre> will be returned. */
+ * @param int $mode If <var>needle</var> is not found then <pre>FALSE</pre> will be returned.
+ */
 	public static /*.string.*/ function strleft(/*.string.*/ $haystack, /*.string.*/ $needle, /*.int.*/ $mode = self::STRLEFT_MODE_NONE) {
 		$posNeedle = strpos($haystack, $needle);
 
@@ -379,6 +403,34 @@ abstract class ezUser_common implements I_ezUser_common {
 				return (string) $posNeedle;
 		} else
 			return substr($haystack, 0, $posNeedle);
+	}
+
+/**
+ * Re-escape a string, replacing tabs and carriage returns etc. with their \t, \n equivalent
+ *
+ * @param mixed $literal The string or array of strings to be re-escaped
+ */
+	public static /*.mixed.*/ function reescape(/*.mixed.*/ $literal) {
+		$search		= array("\t",	"\r",	"\n");
+		$replace	= array('\\t',	'\\r',	'\\n');
+
+		return str_replace($search, $replace, $literal);
+	}
+
+/**
+ * Return the type or class of a variable
+ *
+ * @param mixed $variable The variable to be typed
+ */
+	public static /*.string.*/ function gettype(/*.mixed.*/ $variable) {
+		if (is_object($variable)) {
+			/*.object.*/ $typed = cast('object', $variable);
+			$type = get_class($typed);
+		} else {
+			$type = gettype($variable);
+		}
+
+		return $type;
 	}
 
 /**
@@ -432,7 +484,7 @@ abstract class ezUser_common implements I_ezUser_common {
  *
  * <pre>
  * array (
- *   'key' => 
+ *   'key' =>
  *   array (
  *     'Content-Type' => 'text/html; charset=iso-8859-1',
  *     'description' => 'Free Web tutorials',
@@ -449,11 +501,11 @@ abstract class ezUser_common implements I_ezUser_common {
  *     'geo.placename' => 'Boca Raton, FL',
  *     'ICBM' => '26.367559, -80.12172',
  *   ),
- *   'http-equiv' => 
+ *   'http-equiv' =>
  *   array (
  *     'Content-Type' => 'text/html; charset=iso-8859-1',
  *   ),
- *   'name' => 
+ *   'name' =>
  *   array (
  *     'description' => 'Free Web tutorials',
  *     'keywords' => 'corporate,guidelines,cataloging',
@@ -469,11 +521,11 @@ abstract class ezUser_common implements I_ezUser_common {
  *     'geo.placename' => 'Boca Raton, FL',
  *     'ICBM' => '26.367559, -80.12172',
  *   ),
- *   'lang' => 
+ *   'lang' =>
  *   array (
  *     'DC.title' => 'en',
  *   ),
- *   'scheme' => 
+ *   'scheme' =>
  *   array (
  *     'DCTERMS.modified' => 'XSD.date',
  *   ),
@@ -617,9 +669,9 @@ echo "$indent Corrected \$offset = $offset\n"; // debug
 /**
  * Return the contents of an array as HTML (like <var>var_dump()</var> on steroids), including object members
  *
- * @param mixed $source The array to export. If it's empty then $GLOBALS is exported.
+ * @param array[]mixed $source The array to export. If it's empty then $GLOBALS is exported.
  */
-	public static /*.string.*/ function array_to_HTML(/*.array[]mixed.*/ $source = NULL) {
+	public static /*.string.*/ function array_to_HTML($source = NULL) {
 // If no specific array is passed we will export $GLOBALS to HTML
 // Unfortunately, this means we have to use var_dump() because var_export() barfs on $GLOBALS
 // In fact var_dump is easier to walk than var_export anyway so this is no bad thing.
@@ -718,9 +770,9 @@ echo "</pre>\n"; // debug
 /**
  * Convert a DocBlock to HTML (see http://java.sun.com/j2se/javadoc/writingdoccomments/index.html)
  *
- * @param string $docBlock Some PHP code containing a valid DocBlock.
+ * @param string $php Some PHP code containing a valid DocBlock.
  */
-	public static /*.string.*/ function docBlock_to_HTML(/*.string.*/ $php) {
+	public static /*.string.*/ function docBlock_to_HTML($php) {
 // Updated in version 1.12 (bug fixes and formatting)
 		$eol		= "\r\n";
 		$tagStart	= strpos($php, "/**$eol * ");
@@ -735,6 +787,7 @@ echo "</pre>\n"; // debug
 		$tagPos		= strpos($php, "$eol * @") + 2;
 		$description	= substr($php, $tagStart, $tagPos - $tagStart - 7);
 		$description	= (string) str_replace(' * ', '' , $description);
+		$package	= '(no package specified)';	// Revision 1.22: $package might not get set
 
 		// Get tags and values from DocBlock
 		do {
@@ -777,8 +830,9 @@ echo "</pre>\n"; // debug
 		}
 
 		// Build the HTML
+		// Version 1.16 changed heading to \$package from ezUser
 		$html = <<<HTML
-	<h1>$package</h1> // Version 1.16 changed to $package from ezUser
+	<h1>$package</h1>
 	<h2>$summary</h2>
 	<pre>$description</pre>
 	<hr />
@@ -809,9 +863,12 @@ HTML;
  * Supported flags: GLOB_MARK, GLOB_NOSORT, GLOB_ONLYDIR
  * Additional flags: GLOB_NODIR, GLOB_PATH, GLOB_NODOTS, GLOB_RECURSE
  * (these were not original glob() flags)
+
  * @author BigueNique AT yahoo DOT ca
+ * @param string $pattern
+ * @param int $flags
  */
-	public static /*.mixed.*/ function safe_glob(/*.string.*/ $pattern, /*.int.*/ $flags = 0) {
+	public static /*.mixed.*/ function safe_glob($pattern, $flags = 0) {
 		$split	= explode('/', (string) str_replace('\\', '/', $pattern));
 		$mask	= (string) array_pop($split);
 		$path	= (count($split) === 0) ? '.' : implode('/', $split);
@@ -819,7 +876,8 @@ HTML;
 
 		if ($dir === false) return false;
 
-		$glob	= /*.(array[int]).*/ array();
+		$glob		= /*.(array[int]).*/ array();
+		$sub_glob	= /*.(array[int]).*/ array();
 
 		do {
 			$filename = readdir($dir);
@@ -830,9 +888,9 @@ HTML;
 
 			// Recurse subdirectories (if GLOB_RECURSE is supplied)
 			if ($is_dir && !$is_dot && (($flags & self::GLOB_RECURSE) !== 0)) {
-				$sub_glob	= /*.(array[int]).*/ self::safe_glob($path.'/'.$filename.'/'.$mask,  $flags);
-//					array_prepend($sub_glob, ((boolean) ($flags & self::GLOB_PATH) ? '' : $filename.'/'));
-				$glob		= /*.(array[int]).*/ array_merge($glob, $sub_glob);
+				$sub_glob	= cast('array[int]', self::safe_glob($path.'/'.$filename.'/'.$mask,  $flags));
+//				array_prepend($sub_glob, ((boolean) ($flags & self::GLOB_PATH) ? '' : $filename.'/'));
+				$glob		= cast('array[int]', array_merge($glob, $sub_glob));
 			}
 
 			// Match file mask
@@ -855,6 +913,12 @@ HTML;
  * Return file contents as a string. Fail silently if the file can't be opened.
  *
  * The parameters are the same as the built-in PHP function {@link http://www.php.net/file_get_contents file_get_contents}
+ *
+ * @param string $filename
+ * @param int $flags
+ * @param object $context
+ * @param int $offset
+ * @param int $maxlen
  */
 	public static /*.string.*/ function getFileContents(/*.string.*/ $filename, /*.int.*/ $flags = 0, /*.object.*/ $context = NULL, /*.int.*/ $offset = -1, /*.int.*/ $maxlen = -1) {
 		// From the documentation of file_get_contents:
@@ -920,6 +984,8 @@ HTML;
 
 /**
  * Make a unique hash key from a string (usually an ID)
+ *
+ * @param string $id
  */
 	public static /*.string.*/ function makeUniqueKey(/*.string.*/ $id) {
 		return hash(self::HASH_FUNCTION, $_SERVER['REQUEST_TIME'] . $id);
@@ -955,27 +1021,30 @@ HTML;
 	}
 
 // Added in version 1.10
+// Revision 1.22: More specific about array type (just for PHPLint)
 /**
  * Shuffle an array using the Mersenne Twist PRNG (can be deterministically seeded)
  *
+ * @param array[string]string &$shuffle
+ * @param int $seed
  */
-	private static /*.void.*/ function mt_shuffle_array(/*.array.*/ &$arr, /*.int.*/ $seed = 0) {
-		$count	= count($arr);
-		$keys	= array_keys($arr);
+	private static /*.void.*/ function mt_shuffle_array(/*.array[string]string.*/ &$shuffle, /*.int.*/ $seed = 0) {
+		$count = count($shuffle);
+		/*.array[int]string.*/ $keys = cast('array[int]string', array_keys($shuffle));
 
 		// Seed the RNG with a deterministic seed
 		mt_srand($seed);
 
 		// Shuffle the digits
 		for ($element = $count - 1; $element >= 0; $element--) {
-			$shuffle		= mt_rand(0, $element);
+			$random		= mt_rand(0, $element);
 
-			$key_shuffle		= $keys[$shuffle];
+			$key_shuffle		= $keys[$random];
 			$key_element		= $keys[$element];
 
-			$value			= $arr[$key_shuffle];
-			$arr[$key_shuffle]	= $arr[$key_element];
-			$arr[$key_element]	= $value;
+			$value			= $shuffle[$key_shuffle];
+			$shuffle[$key_shuffle]	= $shuffle[$key_element];
+			$shuffle[$key_element]	= $value;
 		}
 	}
 
@@ -984,14 +1053,14 @@ HTML;
  * The Pseudo-Random Key Generator returns an apparently random key of
  * length $length and comprising digits specified by $base. However, for
  * a given seed this key depends only on $index.
- * 
+ *
  * In other words, if you keep the $seed constant then you'll get a
  * non-repeating series of keys as you increment $index but these keys
  * will be returned in a pseudo-random order.
- * 
+ *
  * The $seed parameter is available in case you want your series of keys
  * to come out in a different order to mine.
- * 
+ *
  * Comparison of bases:
  * <pre>
  * +------+----------------+---------------------------------------------+
@@ -1082,40 +1151,86 @@ HTML;
 		return $result;
 	}
 
-// Updated in version 1.8
+// Updated in version 1.20
+// Revision numbers in this function refer to the is_email() version itself,
+// which is maintained separately here: http://isemail.googlecode.com
 /**
- * Check that an email address conforms to RFC5322 and other RFCs
+ * Check that an email address conforms to RFCs 5321, 5322 and others
  *
- * @param boolean $checkDNS If true then a DNS check for A and MX records will be made
- * @param boolean $diagnose If true then return an integer error number rather than true or false
+ * @param string	$email		The email address to check
+ * @param boolean	$checkDNS	If true then a DNS check for A and MX records will be made
+ * @param mixed		$errorlevel	If true then return an integer error or warning number rather than true or false
  */
-	public static /*.mixed.*/ function is_email (/*.string.*/ $email, $checkDNS = false, $diagnose = false) {
+	public static /*.mixed.*/ function is_email ($email, $checkDNS = false, $errorlevel = false) {
 		// Check that $email is a valid address. Read the following RFCs to understand the constraints:
-		// 	(http://tools.ietf.org/html/rfc5322)
-		// 	(http://tools.ietf.org/html/rfc3696)
 		// 	(http://tools.ietf.org/html/rfc5321)
+		// 	(http://tools.ietf.org/html/rfc5322)
 		// 	(http://tools.ietf.org/html/rfc4291#section-2.2)
 		// 	(http://tools.ietf.org/html/rfc1123#section-2.1)
+		// 	(http://tools.ietf.org/html/rfc3696) (guidance only)
 
-		// the upper limit on address lengths should normally be considered to be 256
+		//	$errorlevel	Behaviour
+		//	---------------	---------------------------------------------------------------------------
+		//	E_ERROR		Return validation failures only. For technically valid addresses return
+		//			ISEMAIL_VALID
+		//	E_WARNING	Return warnings for unlikely but technically valid addresses. This includes
+		//			addresses at TLDs (e.g. johndoe@com), addresses with FWS and comments,
+		//			addresses that are quoted and addresses that contain no alphabetic or
+		//			numeric characters.
+		//	true		Same as E_ERROR
+		//	false		Return true for valid addresses, false for invalid ones. No warnings.
+		//
+		//	Errors can be distinguished from warnings if ($return_value > self::ISEMAIL_ERROR)
+	// version 2.0: Enhance $diagnose parameter to $errorlevel
+
+		if (is_bool($errorlevel)) {
+			if ((bool) $errorlevel) {
+				$diagnose	= true;
+				$warn		= false;
+			} else {
+				$diagnose	= false;
+				$warn		= false;
+			}
+		} else {
+			switch ((int) $errorlevel) {
+			case E_WARNING:
+				$diagnose	= true;
+				$warn		= true;
+				break;
+			case E_ERROR:
+				$diagnose	= true;
+				$warn		= false;
+				break;
+			default:
+				$diagnose	= false;
+				$warn		= false;
+			}
+		}
+
+		if ($diagnose) /*.mixed.*/ $return_status = self::ISEMAIL_VALID; else $return_status = true;
+
+	// version 2.0: Enhance $diagnose parameter to $errorlevel
+
+		// the upper limit on address lengths should normally be considered to be 254
 		// 	(http://www.rfc-editor.org/errata_search.php?rfc=3696)
-		// 	NB I think John Klensin is misreading RFC 5321 and the the limit should actually be 254
-		// 	However, I will stick to the published number until it is changed.
+		// 	NB My erratum has now been verified by the IETF so the correct answer is 254
 		//
 		// The maximum total length of a reverse-path or forward-path is 256
 		// characters (including the punctuation and element separators)
 		// 	(http://tools.ietf.org/html/rfc5321#section-4.5.3.1.3)
+		//	NB There is a mandatory 2-character wrapper round the actual address
 		$emailLength = strlen($email);
-		if ($emailLength > 256)			if ($diagnose) return self::ISEMAIL_TOOLONG; else return false;	// Too long
+	// revision 1.17: Max length reduced to 254 (see above)
+		if ($emailLength > 254)			if ($diagnose) return self::ISEMAIL_TOOLONG;		else return false;	// Too long
 
 		// Contemporary email addresses consist of a "local part" separated from
 		// a "domain part" (a fully-qualified domain name) by an at-sign ("@").
 		// 	(http://tools.ietf.org/html/rfc3696#section-3)
 		$atIndex = strrpos($email,'@');
 
-		if ($atIndex === false)			if ($diagnose) return self::ISEMAIL_NOAT; else return false;	// No at-sign
-		if ($atIndex === 0)			if ($diagnose) return self::ISEMAIL_NOLOCALPART; else return false;	// No local part
-		if ($atIndex === $emailLength - 1)	if ($diagnose) return self::ISEMAIL_NODOMAIN; else return false;	// No domain part
+		if ($atIndex === false)			if ($diagnose) return self::ISEMAIL_NOAT;		else return false;	// No at-sign
+		if ($atIndex === 0)			if ($diagnose) return self::ISEMAIL_NOLOCALPART;	else return false;	// No local part
+		if ($atIndex === $emailLength - 1)	if ($diagnose) return self::ISEMAIL_NODOMAIN;		else return false;	// No domain part
 	// revision 1.14: Length test bug suggested by Andrew Campbell of Gloucester, MA
 
 		// Sanitize comments
@@ -1129,60 +1244,40 @@ HTML;
 			$char = $email[$i];
 			$replaceChar = false;
 
-			if ($char === '\\') {
-				$escapeThisChar = !$escapeThisChar;	// Escape the next character?
-			} else {
+			if ($char === '\\') 	$escapeThisChar = !$escapeThisChar;			// Escape the next character?
+			else {
 				switch ($char) {
 				case '(':
-					if ($escapeThisChar) {
-						$replaceChar = true;
-					} else {
-						if ($inQuote) {
-							$replaceChar = true;
-						} else {
-							if ($braceDepth++ > 0) $replaceChar = true;	// Increment brace depth
-						}
-					}
+					if	($escapeThisChar)	$replaceChar	= true;
+					else if	($inQuote)		$replaceChar	= true;
+					else if	($braceDepth++ > 0)	$replaceChar	= true;		// Increment brace depth
 
 					break;
 				case ')':
-					if ($escapeThisChar) {
-						$replaceChar = true;
-					} else {
-						if ($inQuote) {
-							$replaceChar = true;
-						} else {
-							if (--$braceDepth > 0) $replaceChar = true;	// Decrement brace depth
-							if ($braceDepth < 0) $braceDepth = 0;
-						}
+					if	($escapeThisChar)	$replaceChar	= true;
+					else if	($inQuote)		$replaceChar	= true;
+					else {
+						if (--$braceDepth > 0)	$replaceChar	= true;		// Decrement brace depth
+						if ($braceDepth < 0)	$braceDepth	= 0;
 					}
 
 					break;
 				case '"':
-					if ($escapeThisChar) {
-						$replaceChar = true;
-					} else {
-						if ($braceDepth === 0) {
-							$inQuote = !$inQuote;	// Are we inside a quoted string?
-						} else {
-							$replaceChar = true;
-						}
-					}
+					if	($escapeThisChar)	$replaceChar	= true;
+					else if ($braceDepth === 0)	$inQuote	= !$inQuote;	// Are we inside a quoted string?
+					else				$replaceChar	= true;
 
 					break;
-				case '.':	// Dots don't help us either
-					if ($escapeThisChar) {
-						$replaceChar = true;
-					} else {
-						if ($braceDepth > 0) $replaceChar = true;
-					}
+				case '.':
+					if	($escapeThisChar)	$replaceChar	= true;		// Dots don't help us either
+					else if	($braceDepth > 0)	$replaceChar	= true;
 
 					break;
 				default:
 				}
 
 				$escapeThisChar = false;
-	//			if ($replaceChar) $email[$i] = 'x';	// Replace the offending character with something harmless
+	//			if ($replaceChar) $email[$i] = 'x';					// Replace the offending character with something harmless
 	// revision 1.12: Line above replaced because PHPLint doesn't like that syntax
 				if ($replaceChar) $email = (string) substr_replace($email, 'x', $i, 1);	// Replace the offending character with something harmless
 			}
@@ -1191,6 +1286,8 @@ HTML;
 		$localPart	= substr($email, 0, $atIndex);
 		$domain		= substr($email, $atIndex + 1);
 		$FWS		= "(?:(?:(?:[ \\t]*(?:\\r\\n))?[ \\t]+)|(?:[ \\t]+(?:(?:\\r\\n)[ \\t]+)*))";	// Folding white space
+		$dotArray	= /*. (array[]) .*/ array();
+
 		// Let's check the local part for RFC compliance...
 		//
 		// local-part      =       dot-atom / quoted-string / obs-local-part
@@ -1199,42 +1296,51 @@ HTML;
 		//
 		// Problem: need to distinguish between "first.last" and "first"."last"
 		// (i.e. one element or two). And I suck at regexes.
-		$dotArray	= /*. (array[int]string) .*/ preg_split('/\\.(?=(?:[^\\"]*\\"[^\\"]*\\")*(?![^\\"]*\\"))/m', $localPart);
+		$dotArray	= preg_split('/\\.(?=(?:[^\\"]*\\"[^\\"]*\\")*(?![^\\"]*\\"))/m', $localPart);
 		$partLength	= 0;
 
-		foreach ($dotArray as $element) {
+		foreach ($dotArray as $arrayMember) {
+			$element = (string) $arrayMember;
 			// Remove any leading or trailing FWS
-			$element	= preg_replace("/^$FWS|$FWS\$/", '', $element);
+			$new_element = preg_replace("/^$FWS|$FWS\$/", '', $element);
+			if ($warn && ($element !== $new_element)) $return_status = self::ISEMAIL_FWS;	// FWS is unlikely in the real world
+			$element = $new_element;
+	// version 2.3: Warning condition added
 			$elementLength	= strlen($element);
 
-			if ($elementLength === 0)								if ($diagnose) return self::ISEMAIL_ZEROLENGTHELEMENT; else return false;	// Can't have empty element (consecutive dots or dots at the start or end)
+			if ($elementLength === 0)								if ($diagnose) return self::ISEMAIL_ZEROLENGTHELEMENT;	else return false;	// Can't have empty element (consecutive dots or dots at the start or end)
 	// revision 1.15: Speed up the test and get rid of "unitialized string offset" notices from PHP
 
 			// We need to remove any valid comments (i.e. those at the start or end of the element)
 			if ($element[0] === '(') {
+				if ($warn) $return_status = self::ISEMAIL_COMMENTS;	// Comments are unlikely in the real world
+	// version 2.0: Warning condition added
 				$indexBrace = strpos($element, ')');
 				if ($indexBrace !== false) {
-					if (preg_match('/(?<!\\\\)[\\(\\)]/', substr($element, 1, $indexBrace - 1)) > 0) {
-														if ($diagnose) return self::ISEMAIL_BADCOMMENT_START; else return false;	// Illegal characters in comment
-					}
+					if (preg_match('/(?<!\\\\)[\\(\\)]/', substr($element, 1, $indexBrace - 1)) > 0)
+														if ($diagnose) return self::ISEMAIL_BADCOMMENT_START;	else return false;	// Illegal characters in comment
 					$element	= substr($element, $indexBrace + 1, $elementLength - $indexBrace - 1);
 					$elementLength	= strlen($element);
 				}
 			}
 
 			if ($element[$elementLength - 1] === ')') {
+				if ($warn) $return_status = self::ISEMAIL_COMMENTS;	// Comments are unlikely in the real world
+	// version 2.0: Warning condition added
 				$indexBrace = strrpos($element, '(');
 				if ($indexBrace !== false) {
-					if (preg_match('/(?<!\\\\)(?:[\\(\\)])/', substr($element, $indexBrace + 1, $elementLength - $indexBrace - 2)) > 0) {
-														if ($diagnose) return self::ISEMAIL_BADCOMMENT_END; else return false;	// Illegal characters in comment
-					}
+					if (preg_match('/(?<!\\\\)(?:[\\(\\)])/', substr($element, $indexBrace + 1, $elementLength - $indexBrace - 2)) > 0)
+														if ($diagnose) return self::ISEMAIL_BADCOMMENT_END;	else return false;	// Illegal characters in comment
 					$element	= substr($element, 0, $indexBrace);
 					$elementLength	= strlen($element);
 				}
 			}
 
-			// Remove any leading or trailing FWS around the element (inside any comments)
-			$element = preg_replace("/^$FWS|$FWS\$/", '', $element);
+			// Remove any remaining leading or trailing FWS around the element (having removed any comments)
+			$new_element = preg_replace("/^$FWS|$FWS\$/", '', $element);
+			if ($warn && ($element !== $new_element)) $return_status = self::ISEMAIL_FWS;	// FWS is unlikely in the real world
+			$element = $new_element;
+	// version 2.0: Warning condition added
 
 			// What's left counts towards the maximum length for this part
 			if ($partLength > 0) $partLength++;	// for the dot
@@ -1244,13 +1350,15 @@ HTML;
 			// (because of the obs-local-part provision)
 			if (preg_match('/^"(?:.)*"$/s', $element) > 0) {
 				// Quoted-string tests:
-				//
+				if ($warn) $return_status = self::ISEMAIL_QUOTEDSTRING;	// Quoted string is unlikely in the real world
+	// version 2.0: Warning condition added
 				// Remove any FWS
-				$element = preg_replace("/(?<!\\\\)$FWS/", '', $element);
+				$element = preg_replace("/(?<!\\\\)$FWS/", '', $element);	// A warning condition, but we've already raised self::ISEMAIL_QUOTEDSTRING
 				// My regex skillz aren't up to distinguishing between \" \\" \\\" \\\\" etc.
 				// So remove all \\ from the string first...
 				$element = preg_replace('/\\\\\\\\/', ' ', $element);
-				if (preg_match('/(?<!\\\\|^)["\\r\\n\\x00](?!$)|\\\\"$|""/', $element) > 0)	if ($diagnose) return self::ISEMAIL_UNESCAPEDDELIM; else return false;	// ", CR, LF and NUL must be escaped, "" is too short
+				if (preg_match('/(?<!\\\\|^)["\\r\\n\\x00](?!$)|\\\\"$|""/', $element) > 0)	if ($diagnose) return self::ISEMAIL_UNESCAPEDDELIM;	else return false;	// ", CR, LF and NUL must be escaped
+	// version 2.0: allow ""@example.com because it's technically valid
 			} else {
 				// Unquoted string tests:
 				//
@@ -1260,7 +1368,7 @@ HTML;
 				//
 				// A zero-length element implies a period at the beginning or end of the
 				// local part, or two periods together. Either way it's not allowed.
-				if ($element === '')								if ($diagnose) return self::ISEMAIL_EMPTYELEMENT; else return false;	// Dots in wrong place
+				if ($element === '')								if ($diagnose) return self::ISEMAIL_EMPTYELEMENT;	else return false;	// Dots in wrong place
 
 				// Any ASCII graphic (printing) character other than the
 				// at-sign ("@"), backslash, double quote, comma, or square brackets may
@@ -1269,11 +1377,12 @@ HTML;
 				// 	(http://tools.ietf.org/html/rfc3696#section-3)
 				//
 				// Any excluded characters? i.e. 0x00-0x20, (, ), <, >, [, ], :, ;, @, \, comma, period, "
-				if (preg_match('/[\\x00-\\x20\\(\\)<>\\[\\]:;@\\\\,\\."]/', $element) > 0)	if ($diagnose) return self::ISEMAIL_UNESCAPEDSPECIAL; else return false;	// These characters must be in a quoted string
+				if (preg_match('/[\\x00-\\x20\\(\\)<>\\[\\]:;@\\\\,\\."]/', $element) > 0)	if ($diagnose) return self::ISEMAIL_UNESCAPEDSPECIAL;	else return false;	// These characters must be in a quoted string
+				if ($warn && (preg_match('/^\\w+/', $element) === 0)) $return_status = self::ISEMAIL_UNLIKELYINITIAL;	// First character is an odd one
 			}
 		}
 
-		if ($partLength > 64) if ($diagnose) return self::ISEMAIL_LOCALTOOLONG; else return false;	// Local part must be 64 characters or less
+		if ($partLength > 64)										if ($diagnose) return self::ISEMAIL_LOCALTOOLONG;	else return false;	// Local part must be 64 characters or less
 
 		// Now let's check the domain part...
 
@@ -1283,7 +1392,11 @@ HTML;
 		// 	(http://tools.ietf.org/html/rfc4291#section-2.2)
 		if (preg_match('/^\\[(.)+]$/', $domain) === 1) {
 			// It's an address-literal
+			if ($warn) $return_status = self::ISEMAIL_ADDRESSLITERAL;	// Quoted string is unlikely in the real world
+	// version 2.0: Warning condition added
 			$addressLiteral = substr($domain, 1, strlen($domain) - 2);
+			$groupMax	= 8;
+	// revision 2.1: new IPv6 testing strategy
 			$matchesIP	= array();
 
 			// Extract IPv4 part from the end of the address-literal (if there is one)
@@ -1292,40 +1405,55 @@ HTML;
 
 				if ($index === 0) {
 					// Nothing there except a valid IPv4 address, so...
-					if ($diagnose) return self::ISEMAIL_VALID; else return true;
+					if ($diagnose) return $return_status; else return true;
+	// version 2.0: return warning if one is set
 				} else {
-					// Assume it's an attempt at a mixed address (IPv6 + IPv4)
-					if ($addressLiteral[$index - 1] !== ':')	if ($diagnose) return self::ISEMAIL_IPV4BADPREFIX; else return false;	// Character preceding IPv4 address must be ':'
-					if (substr($addressLiteral, 0, 5) !== 'IPv6:')	if ($diagnose) return self::ISEMAIL_IPV6BADPREFIXMIXED; else return false;	// RFC5321 section 4.1.3
-
-					$IPv6		= substr($addressLiteral, 5, ($index ===7) ? 2 : $index - 6);
-					$groupMax	= 6;
+	//-				// Assume it's an attempt at a mixed address (IPv6 + IPv4)
+	//-				if ($addressLiteral[$index - 1] !== ':')				if ($diagnose) return self::ISEMAIL_IPV4BADPREFIX;	else return false;	// Character preceding IPv4 address must be ':'
+	// revision 2.1: new IPv6 testing strategy
+					if (substr($addressLiteral, 0, 5) !== 'IPv6:')				if ($diagnose) return self::ISEMAIL_IPV6BADPREFIXMIXED;	else return false;	// RFC5321 section 4.1.3
+	//-
+	//-				$IPv6		= substr($addressLiteral, 5, ($index === 7) ? 2 : $index - 6);
+	//-				$groupMax	= 6;
+	// revision 2.1: new IPv6 testing strategy
+					$IPv6		= substr($addressLiteral, 5, $index - 5) . '0000:0000'; // Convert IPv4 part to IPv6 format
 				}
 			} else {
 				// It must be an attempt at pure IPv6
-				if (substr($addressLiteral, 0, 5) !== 'IPv6:')		if ($diagnose) return self::ISEMAIL_IPV6BADPREFIX; else return false;	// RFC5321 section 4.1.3
+				if (substr($addressLiteral, 0, 5) !== 'IPv6:')					if ($diagnose) return self::ISEMAIL_IPV6BADPREFIX;	else return false;	// RFC5321 section 4.1.3
 				$IPv6 = substr($addressLiteral, 5);
-				$groupMax = 8;
+	//-			$groupMax = 8;
+	// revision 2.1: new IPv6 testing strategy
 			}
-
+	//echo "\n<br /><pre>\$IPv6 = $IPv6</pre>\n"; // debug
 			$groupCount	= preg_match_all('/^[0-9a-fA-F]{0,4}|\\:[0-9a-fA-F]{0,4}|(.)/', $IPv6, $matchesIP);
 			$index		= strpos($IPv6,'::');
 
+	//echo "\n<br /><pre>\$matchesIP[0] = " . var_export($matchesIP[0], true) . "</pre>\n"; // debug
 			if ($index === false) {
 				// We need exactly the right number of groups
-				if ($groupCount !== $groupMax)				if ($diagnose) return self::ISEMAIL_IPV6GROUPCOUNT; else return false;	// RFC5321 section 4.1.3
+				if ($groupCount !== $groupMax)							if ($diagnose) return self::ISEMAIL_IPV6GROUPCOUNT;	else return false;	// RFC5321 section 4.1.3
 			} else {
-				if ($index !== strrpos($IPv6,'::'))			if ($diagnose) return self::ISEMAIL_IPV6DOUBLEDOUBLECOLON; else return false;	// More than one '::'
-				$groupMax = ($index === 0 || $index === (strlen($IPv6) - 2)) ? $groupMax : $groupMax - 1;
-				if ($groupCount > $groupMax)				if ($diagnose) return self::ISEMAIL_IPV6TOOMANYGROUPS; else return false;	// Too many IPv6 groups in address
+				if ($index !== strrpos($IPv6,'::'))						if ($diagnose) return self::ISEMAIL_IPV6DOUBLEDOUBLECOLON; else return false;	// More than one '::'
+				if ($index === 0 || $index === (strlen($IPv6) - 2)) $groupMax++;	// RFC 4291 allows :: at the start or end of an address with 7 other groups in addition
+	//echo "\n<br /><pre>\$groupMax = $groupMax</pre>\n"; // debug
+				if ($groupCount > $groupMax)							if ($diagnose) return self::ISEMAIL_IPV6TOOMANYGROUPS;	else return false;	// Too many IPv6 groups in address
+				if ($groupCount === $groupMax) $return_status = self::ISEMAIL_SINGLEGROUPELISION;	// Eliding a single group with :: is deprecated by RFCs 5321 & 5952
 			}
+
+			// Check for single : at start and end of address
+			if (($matchesIP[0][0] === '') && ($matchesIP[0][1] !== ':'))				if ($diagnose) return self::ISEMAIL_IPV6SINGLECOLONSTART; else return false;	// Address starts with a single colon
+			if (($matchesIP[0][$groupCount - 1] === ':') && ($matchesIP[0][$groupCount - 2] !== ':')) if ($diagnose) return self::ISEMAIL_IPV6SINGLECOLONEND; else return false;	// Address ends with a single colon
 
 			// Check for unmatched characters
 			array_multisort($matchesIP[1], SORT_DESC);
-			if ($matchesIP[1][0] !== '')					if ($diagnose) return self::ISEMAIL_IPV6BADCHAR; else return false;	// Illegal characters in address
-
+			if ($matchesIP[1][0] !== '') {
+	//echo "\n<br /><pre>\$matchesIP[1] = " . var_export($matchesIP[1], true) . "</pre>\n"; // debug
+			if ($diagnose) return self::ISEMAIL_IPV6BADCHAR; else return false;	// Illegal characters in address
+	} // debug
 			// It's a valid IPv6 address, so...
-			if ($diagnose) return self::ISEMAIL_VALID; else return true;
+			if ($diagnose) return $return_status; else return true;
+	// revision 2.1: bug fix: now correctly return warning status
 		} else {
 			// It's a domain name...
 
@@ -1352,49 +1480,61 @@ HTML;
 			//
 			// RFC5321 precludes the use of a trailing dot in a domain name for SMTP purposes
 			// 	(http://tools.ietf.org/html/rfc5321#section-4.1.2)
-			$dotArray	= /*. (array[int]string) .*/ preg_split('/\\.(?=(?:[^\\"]*\\"[^\\"]*\\")*(?![^\\"]*\\"))/m', $domain);
+			$dotArray	= preg_split('/\\.(?=(?:[^\\"]*\\"[^\\"]*\\")*(?![^\\"]*\\"))/m', $domain);
 			$partLength	= 0;
 			$element	= ''; // Since we use $element after the foreach loop let's make sure it has a value
 	// revision 1.13: Line above added because PHPLint now checks for Definitely Assigned Variables
 
-			if (count($dotArray) === 1)					if ($diagnose) return self::ISEMAIL_TLD; else return false;	// Mail host can't be a TLD (cite? What about localhost?)
+			if ($warn && (count($dotArray) === 1))	$return_status = self::ISEMAIL_TLD;	// The mail host probably isn't a TLD
+	// version 2.0: downgraded to a warning
 
-			foreach ($dotArray as $element) {
+			foreach ($dotArray as $arrayMember) {
+				$element = (string) $arrayMember;
 				// Remove any leading or trailing FWS
-				$element	= preg_replace("/^$FWS|$FWS\$/", '', $element);
+				$new_element	= preg_replace("/^$FWS|$FWS\$/", '', $element);
+				if ($warn && ($element !== $new_element)) $return_status = self::ISEMAIL_FWS;	// FWS is unlikely in the real world
+				$element = $new_element;
+	// version 2.0: Warning condition added
 				$elementLength	= strlen($element);
 
 				// Each dot-delimited component must be of type atext
 				// A zero-length element implies a period at the beginning or end of the
 				// local part, or two periods together. Either way it's not allowed.
-				if ($elementLength === 0)				if ($diagnose) return self::ISEMAIL_DOMAINEMPTYELEMENT; else return false;	// Dots in wrong place
+				if ($elementLength === 0)							if ($diagnose) return self::ISEMAIL_DOMAINEMPTYELEMENT;	else return false;	// Dots in wrong place
 	// revision 1.15: Speed up the test and get rid of "unitialized string offset" notices from PHP
 
 				// Then we need to remove all valid comments (i.e. those at the start or end of the element
 				if ($element[0] === '(') {
+					if ($warn) $return_status = self::ISEMAIL_COMMENTS;	// Comments are unlikely in the real world
+	// version 2.0: Warning condition added
 					$indexBrace = strpos($element, ')');
 					if ($indexBrace !== false) {
-						if (preg_match('/(?<!\\\\)[\\(\\)]/', substr($element, 1, $indexBrace - 1)) > 0) {
-											if ($diagnose) return self::ISEMAIL_BADCOMMENT_START; else return false;	// Illegal characters in comment
-						}
+						if (preg_match('/(?<!\\\\)[\\(\\)]/', substr($element, 1, $indexBrace - 1)) > 0)
+														if ($diagnose) return self::ISEMAIL_BADCOMMENT_START;	else return false;	// Illegal characters in comment
+	// revision 1.17: Fixed name of constant (also spotted by turboflash - thanks!)
 						$element	= substr($element, $indexBrace + 1, $elementLength - $indexBrace - 1);
 						$elementLength	= strlen($element);
 					}
 				}
 
 				if ($element[$elementLength - 1] === ')') {
+					if ($warn) $return_status = self::ISEMAIL_COMMENTS;	// Comments are unlikely in the real world
+	// version 2.0: Warning condition added
 					$indexBrace = strrpos($element, '(');
 					if ($indexBrace !== false) {
 						if (preg_match('/(?<!\\\\)(?:[\\(\\)])/', substr($element, $indexBrace + 1, $elementLength - $indexBrace - 2)) > 0)
-											if ($diagnose) return self::ISEMAIL_BADCOMMENT_END; else return false;	// Illegal characters in comment
-
+														if ($diagnose) return self::ISEMAIL_BADCOMMENT_END;	else return false;	// Illegal characters in comment
+	// revision 1.17: Fixed name of constant (also spotted by turboflash - thanks!)
 						$element	= substr($element, 0, $indexBrace);
 						$elementLength	= strlen($element);
 					}
 				}
 
 				// Remove any leading or trailing FWS around the element (inside any comments)
-				$element = preg_replace("/^$FWS|$FWS\$/", '', $element);
+				$new_element	= preg_replace("/^$FWS|$FWS\$/", '', $element);
+				if ($warn && ($element !== $new_element)) $return_status = self::ISEMAIL_FWS;	// FWS is unlikely in the real world
+				$element = $new_element;
+	// version 2.0: Warning condition added
 
 				// What's left counts towards the maximum length for this part
 				if ($partLength > 0) $partLength++;	// for the dot
@@ -1405,7 +1545,7 @@ HTML;
 				// separated by dots, and with a maximum total of 255
 				// octets.
 				// 	(http://tools.ietf.org/html/rfc1123#section-6.1.3.5)
-				if ($elementLength > 63)				if ($diagnose) return self::ISEMAIL_DOMAINELEMENTTOOLONG; else return false;	// Label must be 63 characters or less
+				if ($elementLength > 63)							if ($diagnose) return self::ISEMAIL_DOMAINELEMENTTOOLONG;	else return false;	// Label must be 63 characters or less
 
 				// Any ASCII graphic (printing) character other than the
 				// at-sign ("@"), backslash, double quote, comma, or square brackets may
@@ -1418,29 +1558,109 @@ HTML;
 				// 	(http://tools.ietf.org/html/rfc3696#section-2)
 				//
 				// Any excluded characters? i.e. 0x00-0x20, (, ), <, >, [, ], :, ;, @, \, comma, period, "
-				if (preg_match('/[\\x00-\\x20\\(\\)<>\\[\\]:;@\\\\,\\."]|^-|-$/', $element) > 0) {
-											if ($diagnose) return self::ISEMAIL_DOMAINBADCHAR; else return false;
-				}
+				if (preg_match('/[\\x00-\\x20\\(\\)<>\\[\\]:;@\\\\,\\."]|^-|-$/', $element) > 0) if ($diagnose) return self::ISEMAIL_DOMAINBADCHAR;	else return false;	// Illegal character in domain name
 			}
 
-			if ($partLength > 255) 						if ($diagnose) return self::ISEMAIL_DOMAINTOOLONG; else return false;	// Domain part must be 255 characters or less (http://tools.ietf.org/html/rfc1123#section-6.1.3.5)
+			if ($partLength > 255) 									if ($diagnose) return self::ISEMAIL_DOMAINTOOLONG;	else return false;	// Domain part must be 255 characters or less (http://tools.ietf.org/html/rfc1123#section-6.1.3.5)
 
-			if (preg_match('/^[0-9]+$/', $element) > 0)			if ($diagnose) return self::ISEMAIL_TLDNUMERIC; else return false;	// TLD can't be all-numeric (http://www.apps.ietf.org/rfc/rfc3696.html#sec-2)
+			if ($warn && (preg_match('/^[0-9]+$/', $element) > 0))	$return_status = self::ISEMAIL_TLDNUMERIC;	// TLD probably isn't all-numeric (http://www.apps.ietf.org/rfc/rfc3696.html#sec-2)
+	// version 2.0: Downgraded to a warning
 
 			// Check DNS?
-			if ($checkDNS && function_exists('checkdnsrr')) {
-				if (!(checkdnsrr($domain, 'A') || checkdnsrr($domain, 'MX'))) {
-											if ($diagnose) return self::ISEMAIL_DOMAINNOTFOUND; else return false;	// Domain doesn't actually exist
-				}
+			if ($diagnose && ($return_status === self::ISEMAIL_VALID) && $checkDNS && function_exists('checkdnsrr')) {
+				if (!(checkdnsrr($domain, 'A')))	$return_status = self::ISEMAIL_DOMAINNOTFOUND;	// 'A' record for domain can't be found
+				if (!(checkdnsrr($domain, 'MX')))	$return_status = self::ISEMAIL_MXNOTFOUND;		// 'MX' record for domain can't be found
 			}
 		}
 
 		// Eliminate all other factors, and the one which remains must be the truth.
 		// 	(Sherlock Holmes, The Sign of Four)
-		if ($diagnose) return self::ISEMAIL_VALID; else return true;
+		if ($diagnose) return $return_status; else return true;
+	// version 2.0: return warning if one is set
 	}
 }
 // End of class ezUser_common
+
+// PHPLint needs this function to exist outside the class
+/**
+ *	throws ezUserException
+ *
+ *	Checks at runtime for the type of the value.
+ *	If the value matches the specified type, then this value is returned.
+ *	Otherwise a ezUserException is thrown. This function is "magic" in the
+ *	sense that it is handled in special way by PHPLint: in fact the
+ *	returned type always corresponds to what is specified in the $type
+ *	argument; moreover, cast checks that the expression giving $type be
+ *	a static expression of string type.
+ *
+ * @param string $type The target type
+ * @param mixed $variable The variable to be cast
+ */
+/*.mixed.*/ function cast(/*.string.*/ $type, /*.mixed.*/ $variable) {
+	if (!is_string($type))	throw new ezUserException('type is not a string');
+	if ($type === '')	throw new ezUserException('type is empty');
+
+	// Check non-array types:
+	if (
+		$variable instanceof $type
+		or $type === 'boolean'	and is_bool($variable)
+		or $type === 'int'	and is_int($variable)
+		or $type === 'float'	and is_float($variable)
+		or $type === 'string'	and (is_string($variable)	or is_null($variable))
+		or $type === 'resource'	and (is_resource($variable)	or is_null($variable))
+		or $type === 'object'	and (is_object($variable)	or is_null($variable))
+	)
+		return $variable;
+
+	if ($type === 'array' or $type === 'array[]') {
+		if (!(is_null($variable) or is_array($variable))) {
+			throw new ezUserException('value is not an array: ' . ezUser_common::gettype($variable));
+		}
+		return $variable;
+	}
+
+	if (strlen($type) > 6 and substr($type, 0, 6) === 'array[') {
+
+		if (!is_array($variable))
+			throw new ezUserException('value is not an array: ' . ezUser_common::gettype($variable));
+
+		// NULL or empty array matches any type of array:
+		if (count($variable) === 0) return $variable;
+
+		// Parse index type:
+		$close = strpos($type, ']');
+		// cast now guarantees ']' does exist.
+		$index_type = substr($type, 6, $close - 6);
+		// cast now guarantees $index_type is either 'int', 'string' or ''.
+
+		// Parse element type:
+		/*.mixed.*/ $result = substr($type, $close + 1, strlen($type) - $close - 1);
+
+		$elem_type = (is_bool($result)) ? '' : (string) $result;
+
+		if (strlen($elem_type) > 0 and $elem_type[0] === '[') $elem_type = "array$elem_type";
+		// cast now garantees $elem_type does exist or it is ''
+
+		// Now check all indexes and elements:
+		foreach(/*.(array).*/ $variable as $k => &$v) {
+
+			// Check index type:
+			if ($index_type === 'int') {
+				if (!is_int($k))	throw new ezUserException("found index of type string: $k");
+			} else if ($index_type === 'string') {
+				if (!is_string($k))	throw new ezUserException("found index of type int: $k");
+			} else {
+				// Any index.
+			}
+
+			// Check elem type:
+			if ($elem_type !== '') /* $ignore = */ cast($elem_type, $v);
+		}
+		return $variable;
+	}
+
+	throw new ezUserException("value is not of type $type: " . ezUser_common::gettype($variable));
+}
 
 
 /**
@@ -1491,8 +1711,8 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 	}
 
 	public /*.void.*/	function setData(/*.string.*/ $data) {
-		list($this->id, $this->resetKey, $expiresString) = /*.(array[int]string).*/ unserialize($data);
-		$this->expires = /*.(DateTime).*/ unserialize($expiresString);
+		list($this->id, $this->resetKey, $expiresString) = cast('array[int]string', unserialize($data));
+		$this->expires = cast('DateTime', unserialize($expiresString));
 	}
 }
 // End of class ezUser_reset
@@ -1516,16 +1736,17 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 		ACTION_BODY		= 'body',
 		ACTION_CANCEL		= 'cancel',
 		ACTION_CONTAINER	= 'container',
-//-		ACTION_DASHBOARD	= 'dashboard',
-		ACTION_JAVASCRIPT	= 'js',
 		ACTION_CONTROLPANEL	= 'controlpanel',
+		ACTION_JAVASCRIPT	= 'js',
 		ACTION_RESEND		= 'resend',		// Resend verification email
 		ACTION_RESET		= 'reset',		// Process password reset link
 		ACTION_RESETPASSWORD	= 'resetpassword',	// Initiate password reset processing
 		ACTION_RESETREQUEST	= 'resetrequest',	// Request password reset form
+		ACTION_RESETREQUESTFORM	= 'resetrequestform',	// Request request password reset form (yeah, I know)
 		ACTION_RESULTFORM	= 'resultform',
 		ACTION_RESULTTEXT	= 'resulttext',
 		ACTION_SIGNIN		= 'signin',
+		ACTION_SIGNINFORM	= 'signinform',
 		ACTION_SIGNOUT		= 'signout',
 		ACTION_SOURCECODE	= 'source',
 		ACTION_STATUSTEXT	= 'statustext',
@@ -1564,11 +1785,13 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 		// Authentication result codes
 		RESULT_UNDEFINED	= 0,
 		RESULT_SUCCESS		= 1,
-		RESULT_UNKNOWNUSER	= 2,
-		RESULT_BADPASSWORD	= 3,
-		RESULT_UNKNOWNACTION	= 4,
-		RESULT_NOACTION		= 5,
-		RESULT_FAILEDAUTOSIGNIN	= 6,
+		RESULT_NOUSER		= 2,
+		RESULT_UNKNOWNACTION	= 3,
+		RESULT_NOACTION		= 4,
+		RESULT_FAILEDAUTOSIGNIN	= 5,
+		RESULT_FAIL		= 16,	// Passed to browser when RESULT_UNKNOWNUSER or RESULT_BADPASSWORD would reveal too much
+		RESULT_UNKNOWNUSER	= 17,
+		RESULT_BADPASSWORD	= 18,
 
 		// Validation result codes
 		RESULT_VALIDATED	= 32,
@@ -1590,8 +1813,12 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
 		RESULT_NOSESSION	= 64,
 		RESULT_NOSESSIONCOOKIES	= 65,
 		RESULT_STORAGEERR	= 66,
-		RESULT_EMAILERR		= 67,
+//-		RESULT_EMAILERR		= 67,
 		RESULT_HEADERSSENT	= 68,
+
+		// Result codes for verification process
+		RESULT_ALREADYVERIFIED	= 96,
+		RESULT_EMAILFAIL	= 97,
 
 		// Miscellaneous constants
 		DELIMITER_SPACE		= ' ',
@@ -1621,29 +1848,29 @@ class ezUser_reset extends ezUser_common implements I_ezUser_reset {
  */
 class ezUser_base extends ezUser_common implements I_ezUser_base {
 	// User data
-	private		$keys	= array (
-						self::TAGNAME_USERNAME	,
-						self::TAGNAME_EMAIL	,
-						self::TAGNAME_ID	,
-						self::TAGNAME_PASSWORD	,
-						self::TAGNAME_STATUS	,
-						self::TAGNAME_FIRSTNAME	,
-						self::TAGNAME_LASTNAME	,
-						self::TAGNAME_FULLNAME	,
-						self::TAGNAME_VERIFICATIONKEY,
-					);
+	private	$keys	= array (
+			      self::TAGNAME_USERNAME	,
+			      self::TAGNAME_EMAIL	,
+			      self::TAGNAME_ID		,
+			      self::TAGNAME_PASSWORD	,
+			      self::TAGNAME_STATUS	,
+			      self::TAGNAME_FIRSTNAME	,
+			      self::TAGNAME_LASTNAME	,
+			      self::TAGNAME_FULLNAME	,
+			      self::TAGNAME_VERIFICATIONKEY,
+		      );
 
-	private		$values	= array (
-						self::TAGNAME_USERNAME		=> '',
-						self::TAGNAME_EMAIL		=> '',
-						self::TAGNAME_ID		=> '',
-						self::TAGNAME_PASSWORD		=> '',
-						self::TAGNAME_STATUS		=> '0',
-						self::TAGNAME_FIRSTNAME		=> '',
-						self::TAGNAME_LASTNAME		=> '',
-						self::TAGNAME_FULLNAME		=> '',
-						self::TAGNAME_VERIFICATIONKEY	=> ''
-					);
+	private	$values	= array (
+			      self::TAGNAME_USERNAME		=> '',
+			      self::TAGNAME_EMAIL		=> '',
+			      self::TAGNAME_ID			=> '',
+			      self::TAGNAME_PASSWORD		=> '',
+			      self::TAGNAME_STATUS		=> '0',
+			      self::TAGNAME_FIRSTNAME		=> '',
+			      self::TAGNAME_LASTNAME		=> '',
+			      self::TAGNAME_FULLNAME		=> '',
+			      self::TAGNAME_VERIFICATIONKEY	=> ''
+		      );
 
 	// State and derived data
 	private		$authenticated		= false;					// User is signed in
@@ -1701,7 +1928,7 @@ class ezUser_base extends ezUser_common implements I_ezUser_base {
 			// Sign in
 			self::checkSession();
 			$sessionHash = hash(self::HASH_FUNCTION, session_id() . hash(self::HASH_FUNCTION, $_SERVER['REMOTE_ADDR'] . $this->values[self::TAGNAME_PASSWORD]));
-//error_log(date('Y-m-d H:i:s', time()) . "\t" . session_id() . '|' . $_SERVER['REMOTE_ADDR'] . '|' . $this->values[self::TAGNAME_PASSWORD] . '|' . hash(self::HASH_FUNCTION, $_SERVER['REMOTE_ADDR'] . $this->values[self::TAGNAME_PASSWORD]) . "|$sessionHash|$passwordHash\n", 3, dirname(__FILE__) . self::URL_SEPARATOR . '.ezuser-log.php'); // Debug
+//error_log(date('Y-m-d H:i:s', time()) . "\t" . $_SERVER['REMOTE_ADDR'] . '|' . session_id() . '|' . $this->values[self::TAGNAME_PASSWORD] . '|' . hash(self::HASH_FUNCTION, $_SERVER['REMOTE_ADDR'] . $this->values[self::TAGNAME_PASSWORD]) . "|$sessionHash|$passwordHash\n", 3, dirname(__FILE__) . self::URL_SEPARATOR . '.ezuser-log.php'); // Debug
 			$this->authenticated = ($passwordHash === $sessionHash);
 
 			if ($this->authenticated) {
@@ -1774,7 +2001,7 @@ class ezUser_base extends ezUser_common implements I_ezUser_base {
 // "Set" methods
 // ---------------------------------------------------------------------------
 	protected /*.void.*/ function setData(/*.string.*/ $data) {
-		$this->values = /*.(array[string]string).*/ unserialize($data);
+		$this->values = cast('array[string]string', unserialize($data));	// PHPLint typecasting
 	}
 
 	protected /*.void.*/ function clearErrors() {
@@ -1889,7 +2116,6 @@ interface I_ezUser_environment extends I_ezUser_base {
 
 		// Storage locations
 		STORAGE			= '.ezuser-data.php',
-//-		SETTINGS		= '.ezuser-settings.php',
 		LOG			= '.ezuser-log.php',
 
 		// Keys for the configuration settings
@@ -1920,9 +2146,37 @@ abstract class ezUser_environment extends ezUser_base implements I_ezUser_enviro
 // Helper methods
 // ---------------------------------------------------------------------------
 	protected static /*.boolean.*/ function logMessage($message = 'Unknown') {
-		$filename = dirname(__FILE__) . self::URL_SEPARATOR . self::LOG;
+		$filename	= dirname(__FILE__) . self::URL_SEPARATOR . self::LOG;
 		$logWhen	= date('Y-m-d H:i:s', time());
+
 		return error_log("$logWhen\t$message\n", 3, $filename);
+	}
+
+	private static /*.void.*/ function saveStorage(/*.string.*/ $content, /*.string.*/ $storage_file) {
+		/*.resource.*/ $handle;	// Declaration for PHPLint
+
+		for ($attempt = 0; $attempt < 3; $attempt++) {
+			$handle = @fopen($storage_file, 'wb');
+			if (is_resource($handle)) break;
+			sleep(1); // File may occasionally be locked by indexing/backups etc.
+		}
+
+		if (!is_resource($handle)) exit(self::RESULT_STORAGEERR);
+
+		fwrite($handle, $content);
+		fclose($handle);
+		chmod($storage_file, 0600);
+	}
+
+	private static /*.void.*/ function createStorage(/*.string.*/ $storage_file) {
+		$query = '?';
+		$xml = <<<XML
+<?php header("Location: /"); $query>
+<users>
+</users>
+XML;
+
+		self::saveStorage($xml, $storage_file);
 	}
 
 	private static /*.DOMDocument.*/ function openStorage() {
@@ -1932,20 +2186,7 @@ abstract class ezUser_environment extends ezUser_base implements I_ezUser_enviro
 		$storage_file = realpath(dirname(__FILE__)) . self::URL_SEPARATOR . self::STORAGE;
 
 		// If storage container doesn't exist then create it
-		if (!is_file($storage_file)) {
-			$query = '?';
-			$html = <<<HTML
-<?php header("Location: /"); $query>
-<users>
-</users>
-HTML;
-
-			$handle = @fopen($storage_file, 'wb');
-			if (is_bool($handle)) exit(self::RESULT_STORAGEERR);
-			fwrite($handle, $html);
-			fclose($handle);
-			chmod($storage_file, 0600);
-		}
+		if (!is_file($storage_file)) self::createStorage($storage_file);
 
 		// Open the container for use
 		$storage = new DOMDocument();
@@ -1956,14 +2197,11 @@ HTML;
 
 // ---------------------------------------------------------------------------
 	private static /*.void.*/ function closeStorage(DOMDocument $storage) {
-		$storage_file = dirname(__FILE__) . self::URL_SEPARATOR . self::STORAGE;
+		$storage_file	= dirname(__FILE__) . self::URL_SEPARATOR . self::STORAGE;
+		$xml		= $storage->saveXML($storage->documentElement);
 
-		for ($attempt = 0; $attempt < 3; $attempt++) {
-			$count = @$storage->save($storage_file);
-			if ((bool) $count) break;
-			sleep(1); // File may occasionally be locked by indexing/backups etc.
-		}
-}
+		self::saveStorage($xml, $storage_file);
+	}
 
 // ---------------------------------------------------------------------------
 	private static /*.DOMElement.*/ function findUser(DOMDocument $storage, $needle = '', $tagName = '') {
@@ -1982,8 +2220,7 @@ HTML;
 
 
 		if ($found && isset($node)) {
-			/*.object.*/ $userElement_PHPLint = $node->parentNode;	// PHPLint-compliant typecasting (yawn)
-			$userElement = /*.(DOMElement).*/ $userElement_PHPLint;
+			$userElement = cast('DOMElement', $node->parentNode);	// PHPLint-compliant typecasting
 			return $userElement;
 		} else {
 			return $storage->createElement(self::TAGNAME_USER);
@@ -2023,14 +2260,25 @@ HTML;
 // ---------------------------------------------------------------------------
 // Functions for sending stuff to the browser
 // ---------------------------------------------------------------------------
-	protected static /*.void.*/ function sendContent(/*.string.*/ $content, $container = '', $contentType = 'text/html') {
+	protected static /*.void.*/ function sendContent(/*.string.*/ $content, $container = '', $contentType = 'text/html', $attributes = '') {
 		// Send headers first
 		if (!headers_sent()) {
 			if ($container === '') $container = 'ezuser';
 //header("Container-length: " . strlen($container)); // debug
 			header('Package: ezUser');
-			header("ezUser-container: $container");
+			header("ezUser-id: $container");
 			header("Content-type: $contentType");
+
+			if ($attributes !== '') {
+				$document = new DOMDocument();
+				$document->loadHTML("<p $attributes />");
+				$attributeList = $document->getElementsByTagName('p')->item(0)->attributes;
+
+				foreach ($attributeList as $item) {
+					$attribute = cast('DOMAttr', $item);
+					header($attribute->nodeName . ': ' , $attribute->nodeValue);
+				}
+			}
 		}
 
 		// Send content
@@ -2069,10 +2317,13 @@ HTML;
 			// Authentication results
 			case self::RESULT_UNDEFINED:		$text = "Undefined";					break;
 			case self::RESULT_SUCCESS:		$text = "Success";					break;
-			case self::RESULT_UNKNOWNUSER:		$text = "Username not recognised";			break;
-			case self::RESULT_BADPASSWORD:		$text = "Password is wrong";				break;
+			case self::RESULT_NOUSER:		$text = "Please enter a username";			break;
 			case self::RESULT_UNKNOWNACTION:	$text = "Unrecognised action";				break;
 			case self::RESULT_NOACTION:		$text = "No action specified";				break;
+			case self::RESULT_FAILEDAUTOSIGNIN:	$text = "Couldn't auto-sign-in";			break;
+			case self::RESULT_FAIL:			$text = "Please try again";				break;
+			case self::RESULT_UNKNOWNUSER:		$text = "Username not recognised";			break;
+			case self::RESULT_BADPASSWORD:		$text = "Password is wrong";				break;
 
 			// Registration and validation results
 			case self::RESULT_VALIDATED:		$text = "Validation was successful";			break;
@@ -2094,8 +2345,12 @@ HTML;
 			case self::RESULT_NOSESSION:		$text = "No session data available";			break;
 			case self::RESULT_NOSESSIONCOOKIES:	$text = "Session cookies are not enabled";		break;
 			case self::RESULT_STORAGEERR:		$text = "Error with stored user details";		break;
-			case self::RESULT_EMAILERR:		$text = "Error sending email";				break;
 			case self::RESULT_HEADERSSENT:		$text = "Headers already sent";				break;
+
+			// Result codes for verification process
+			case self::RESULT_ALREADYVERIFIED:	$text = "Account has already been verified";		break;
+			case self::RESULT_EMAILFAIL:		$text = "Email not sent: please try again later";	break;
+
 			default:				$text = "Unknown result code";				break;
 		}
 
@@ -2135,7 +2390,7 @@ self::logMessage("setSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 
 	public static /*.ezUser_base.*/ function signIn($userData = /*.(array[string]mixed).*/ array()) {
 		$autoSignInRequest	= (count($userData) === 0);
-		$logEntry		= 'Sign in';
+		$logEntry		= 'Sign in|' . $_SERVER['REMOTE_ADDR'] . '|' . session_id();
 
 		if ($autoSignInRequest) {
 			if (self::autoSignInAvailable()) {
@@ -2156,13 +2411,16 @@ self::logMessage("setSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 		$logEntry	.= "|$username|$password";
 
 		if ($username === '') {
-			$ezUser		= new ezUser_base();
+			$ezUser = new ezUser_base();
+			$ezUser->setResult(self::RESULT_NOUSER);
 		} else {
-			$ezUser		= self::lookup($username);
+			$ezUser = self::lookup($username);
 
 			if ($ezUser->status() === self::STATUS_UNKNOWN) {
+				$logEntry .= "|(user not found)";
 				$ezUser->setResult(($autoSignInRequest) ? self::RESULT_FAILEDAUTOSIGNIN : self::RESULT_UNKNOWNUSER);
 			} else {
+				$logEntry .= '|' . $ezUser->id();
 				$ezUser->authenticate($password); // Sets result itself
 			}
 		}
@@ -2199,16 +2457,21 @@ $debug_result		= ((isset($_SESSION)) && (is_array($_SESSION)) && (array_key_exis
 self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is array: $debug_isarray|\$instanceId = $instanceId|array key exists: $debug_keyexists|result = $debug_result|session_id = " . session_id()); // debug
 */
 
-		if	(!array_key_exists($instanceId, $_SESSION))	$_SESSION[$instanceId] = self::signIn(); // Returns ezUser object, signed in if possible
+		if	(
+				!array_key_exists($instanceId, $_SESSION)
+			)
+			$_SESSION[$instanceId] = self::signIn(); // Returns ezUser object, signed in if possible
 
-		$ezUser = /*.(ezUser_base).*/ $_SESSION[$instanceId];
+		$ezUser = cast('ezUser_base', $_SESSION[$instanceId]);
 
 		if	(
-			!$ezUser->authenticated() &&
-			!$ezUser->manualSignOut() &&
-			self::autoSignInAvailable()
-			)						$_SESSION[$instanceId] = self::signIn(); // Returns ezUser object, signed in if possible
-		return /*.(ezUser_base).*/ $_SESSION[$instanceId];
+				!$ezUser->authenticated() &&
+				!$ezUser->manualSignOut() &&
+				self::autoSignInAvailable()
+			)
+			$_SESSION[$instanceId] = self::signIn(); // Returns ezUser object, signed in if possible
+
+		return cast('ezUser_base', $_SESSION[$instanceId]);
 	}
 
 // ---------------------------------------------------------------------------
@@ -2219,35 +2482,13 @@ self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 	}
 
 	private static /*.array[string]string.*/ function loadConfig() {
-		$ezUser		= self::getSessionObject();
-
-/* //-
-		$config		= $ezUser->config();
-		$settingsFile	= realpath(dirname(__FILE__) . self::URL_SEPARATOR . self::SETTINGS);
-
-		// If configuration settings file doesn't exist then use default settings
-		if (($settingsFile === false) || !is_file($settingsFile)) {
-			$config[self::SETTINGS_EMPTY] = self::STRING_TRUE;
-		} else {
-			// Open the vessel
-			$storage = new DOMDocument();
-			$storage->load($settingsFile);
-			$nodeList = $storage->getElementsByTagName('settings')->item(0)->childNodes;
-
-			for ($i = 0; $i < $nodeList->length; $i++) {
-				$node = $nodeList->item($i);
-
-				if ($node->nodeType == XML_ELEMENT_NODE) {
-					$config[$node->nodeName] = $node->nodeValue;
-				}
-			}
-		}
-*/
-
 		$settings	= new ezUser_settings();
 		$config		= $settings->get_all();
+
 		if (count($config) === 0) $config[self::SETTINGS_EMPTY] = self::STRING_TRUE;
 		$config[self::SETTINGS_PERSISTED] = self::STRING_TRUE;
+
+		$ezUser = self::getSessionObject();
 		$ezUser->setConfig($config);
 		return $config;
 	}
@@ -2375,10 +2616,10 @@ self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 // ---------------------------------------------------------------------------
 //	Account verification
 // ---------------------------------------------------------------------------
-	protected static /*.boolean.*/ function verify_notify($username_or_email = '') {
+	protected static /*.integer.*/ function verify_notify($username_or_email = '') {
 		$ezUser = self::lookup($username_or_email);
 
-		if ($ezUser->status() !== self::STATUS_PENDING) return false;	// Only send confirmation email to users who are pending verification
+		if ($ezUser->status() !== self::STATUS_PENDING) return self::RESULT_ALREADYVERIFIED;	// Only send confirmation email to users who are pending verification
 
 		// Message - SMTP needs CRLF not a bare LF (http://cr.yp.to/docs/smtplf.html)
 		$URL		= self::getURL(self::URL_MODE_ALL, 'ezuser.php');
@@ -2389,7 +2630,7 @@ self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 		$message	.= "After you click the link your account will be fully functional.\r\n";
 
 		// Send it
-		return self::sendEmail($ezUser->email(), 'New account confirmation', $message);
+		return (self::sendEmail($ezUser->email(), 'New account confirmation', $message)) ? self::RESULT_SUCCESS : self::RESULT_EMAILFAIL;
 	}
 
 	protected static /*.void.*/ function verify_update(ezUser_base $ezUser, /*.string.*/ $verificationKey) {
@@ -2526,7 +2767,7 @@ self::logMessage("getSessionObject|\$_SESSION exists: $debug_isset|\$_SESSION is
 
 // ---------------------------------------------------------------------------
 	protected static /*.string.*/ function getSecureContent(/*.string.*/ $referer) {
-		$refererElements	= /*.(array[int]string).*/ array_slice(explode(self::URL_SEPARATOR, $referer), 3);
+		$refererElements	= cast('array[int]string', array_slice(explode(self::URL_SEPARATOR, $referer), 3));
 		$folder			= self::getSetting(self::SETTINGS_SECUREFOLDER);
 
 		if ($folder === '') $folder = dirname(realpath(__FILE__));
@@ -2594,12 +2835,14 @@ interface I_ezUser extends I_ezUser_environment {
 
 		// Button types
 		BUTTON_TYPE_ACTION	= 'action',
+		BUTTON_TYPE_DEFAULT	= 'default',
 		BUTTON_TYPE_PREFERENCE	= 'preference',
+		BUTTON_TYPE_FIXEDWIDTH	= 'fixedwidth',
 		BUTTON_TYPE_HIDDEN	= 'hidden',
 
 		// Message types
 		MESSAGE_TYPE_DEFAULT	= 'message',
-		MESSAGE_TYPE_TEXT	= 'text',
+		MESSAGE_TYPE_DIALOG	= 'dialog',
 
 		// Message styles
 		MESSAGE_STYLE_DEFAULT	= 'info',
@@ -2607,11 +2850,18 @@ interface I_ezUser extends I_ezUser_environment {
 		MESSAGE_STYLE_TEXT	= 'text',
 		MESSAGE_STYLE_PLAIN	= 'plain',
 
+		// Container styles
+		CONTAINER_STYLE_INLINE	= 'inline',
+		CONTAINER_STYLE_DIALOG	= 'dialog',
+
 		// Miscellaneous constants
 		DELIMITER_PLUS		= '+',
 		PASSWORD_MASK		= '************',
 		STRING_LEFT		= 'left',
-		STRING_RIGHT		= 'right';
+		STRING_RIGHT		= 'right',
+
+		// Debugging & QA
+		VERBOSE			= false; // set to true for diagnostic (but insecure) messages
 
 
 // Methods may be commented out to reduce the attack surface when they are
@@ -2621,11 +2871,10 @@ interface I_ezUser extends I_ezUser_environment {
 //	public static /*.void.*/	function getStatusDescription	(/*.int.*/ $status, $more = '');
 //	public static /*.void.*/	function getResultDescription	(/*.int.*/ $result, $more = '');
 	public static /*.void.*/	function getResultForm		(/*.int.*/ $result, $more = '');
-//	public static /*.void.*/	function fatalError		(/*.int.*/ $result, $more = '');
-	public static /*.void.*/	function getAccountForm		($mode = '', $newUser = false);
-//-	public static /*.void.*/	function getControlPanelAuthenticated();
+	public static /*.void.*/	function getAccountForm		($mode = '', $newUser = false, $wizard = false);
 //	public static /*.void.*/	function getSignInForm		();
-	public static /*.void.*/	function getControlPanel	($username = '');
+	public static /*.void.*/	function getSignInResults	();
+//	public static /*.void.*/	function getControlPanel	();
 //	public static /*.void.*/	function getStyleSheet		();
 //	public static /*.void.*/	function getJavascript		($containerList = '');
 	public static /*.void.*/	function getContainer		($action = self::ACTION_CONTROLPANEL);
@@ -2641,24 +2890,33 @@ interface I_ezUser extends I_ezUser_environment {
  * @package ezUser
  */
 class ezUser extends ezUser_environment implements I_ezUser {
-	private static /*.string.*/ function getXML($html = '', $container = '') {
+	private static /*.string.*/ function getXML($html = '', $container = '', $attributes = '') {
 		if (is_numeric($container) || $container === '') $container = 'ezuser'; // If passed to sendXML as an array
-		return "<ezuser container=\"$container\"><![CDATA[$html]]></ezuser>";
+		$attributeDelim = ($attributes === '') ? '' : ' ';
+		return "<container id=\"$container\"$attributeDelim$attributes><![CDATA[$html]]></container>";
 	}
 
-	private static /*.void.*/ function sendXML(/*.mixed.*/ $content = '', $container = '') {
+	private static /*.void.*/ function sendXML(/*.mixed.*/ $content = '', $container = '', $attributes = '') {
 		if (is_array($content)) {
-			// Expected array format is $content['container'] = '<html>'
-			$contentArray	= /*.(array[]string).*/ $content;
-			$xmlArray	= /*.(array[]string).*/ array_map('self::getXML', $contentArray, array_keys($contentArray)); // wrap each element
-			$xml		= implode('', $xmlArray);
-			$xml		= "<ezuser>$xml</ezuser>";
+			$contentArray	= cast('array[int]', $content);
 
+			if (is_array($contentArray[0])) {
+				$xml = '';
+
+				foreach ($contentArray as $item) {
+					$thisContent	= cast('array[int]string', $item);
+					$xml		.= self::getXML($thisContent[0], $thisContent[1], $thisContent[2]);
+				}
+
+				$xml = "<containers>$xml</containers>";
+			} else {
+				$xml = self::getXML($contentArray[0], $contentArray[1], $contentArray[2]);
+			}
 		} else {
-			$xml = self::getXML((string) $content, $container);
+			$xml = self::getXML((string) $content, $container, $attributes);
 		}
 
-		self::sendContent($xml, $container, 'text/xml');
+		self::sendContent($xml, $container, 'text/xml', $attributes);
 	}
 
 // ---------------------------------------------------------------------------
@@ -2674,13 +2932,13 @@ class ezUser extends ezUser_environment implements I_ezUser {
 <html>
 
 <head>
-	<meta content="text/html; charset=utf-8" http-equiv="Content-Type" />
+	<meta charset="UTF-8"/>
 	<title>$title</title>
-	<script src="$URL?$actionJs"></script>
 	<link type="text/css" rel="stylesheet" href="$URL?$actionCSS" title="ezUser">
+	<script src="$URL?$actionJs"></script>
 </head>
 
-<body class="ezuser">
+<body class="ezuser ezuser-body">
 $body
 </body>
 
@@ -2700,48 +2958,60 @@ HTML;
 		$html = <<<HTML
 	<div id="$container"></div>
 	<script type="text/javascript">document.write(unescape('%3Cscript src="$URL?$actionCommand=$actionJs"%3E%3C/script%3E'));</script>
-	<script type="text/javascript">ezUser.ajax.execute('$action');</script>
+	<script type="text/javascript">ezUser.action('$action');</script>
 HTML;
 
 		if ($sendToBrowser) {self::sendContent($html); return '';} else return $html;
 	}
 
-	private static /*.string.*/ function htmlInputText($styleFloat = self::STRING_RIGHT) {
-		$onKeyUp	= 'ezUser.keyUp';
-
+	private static /*.string.*/ function htmlInputText($styleDialog = self::STRING_RIGHT) {
 		return <<<HTML
-					class		=	"ezuser-text ezuser-$styleFloat"
-					onkeyup		=	"$onKeyUp(event)"
+					class		=	"ezuser-text ezuser-$styleDialog"
+					onkeyup		=	"ezUser.keyUp(event)"
 					size		=	"40"
 HTML;
 	}
 
-	private static /*.string.*/ function htmlButton(/*.string.*/ $type, $styleFloat = self::STRING_RIGHT, $verbose = false) {
-		$classVerbose	= ($verbose) ? ' ezuser-' . self::BUTTON_TYPE_PREFERENCE . '-' . self::TAGNAME_VERBOSE : '';
-		$styleString	= ($type === self::BUTTON_TYPE_HIDDEN) ? 'ezuser-' . self::BUTTON_TYPE_ACTION . " ezuser-$type" : "ezuser-$type";
-		$setButtonState	= 'ezUser.setButtonState';
-		$onClick	= 'ezUser.click';
+	private static /*.string.*/ function htmlDialogClose(/*.string.*/ $container) {
+		$URL		= self::thisURL();
+		$actionBitmap	= self::ACTION_BITMAP;
 
 		return <<<HTML
-					type		=	"button"
-					class		=	"ezuser-button ezuser-$styleFloat $styleString$classVerbose ezuser-buttonstate-0"
-					onclick		=	"$onClick(this)"
-					onmouseover	=	"$setButtonState(this, 1, true)"
-					onmouseout	=	"$setButtonState(this, 1, false)"
-					onfocus		=	"$setButtonState(this, 2, true)"
-					onblur		=	"$setButtonState(this, 2, false)"
+<img id="$container-close" class="ezuser-dialog-control ezuser-dialog-close" src="$URL?$actionBitmap=close" onclick="ezUser.click(this)" />
 HTML;
 	}
 
-	private static /*.string.*/ function htmlMessage($message = '', $style = self::MESSAGE_STYLE_DEFAULT, $container = '', $type = self::MESSAGE_TYPE_DEFAULT, $styleFloat = self::STRING_RIGHT) {
-		$style		= ($message === '') ? 'hidden' : $style;
-		$message	= "<p class=\"ezuser-message-$style\">$message</p>";
-		$id		= ($container === '') ? "ezuser-$type" : "$container-$type";
-		$onClick	= 'ezUser.click';
+	private static /*.string.*/ function htmlButton(/*.string.*/ $type) {
+		$classVerbose	= (self::VERBOSE) ? ' ezuser-' . self::BUTTON_TYPE_PREFERENCE . '-' . self::TAGNAME_VERBOSE : '';
+		$styleString	= ($type === self::BUTTON_TYPE_HIDDEN)	? 'ezuser-' . self::BUTTON_TYPE_ACTION . " ezuser-$type" : "ezuser-$type";
+		$state		= ($type === self::BUTTON_TYPE_DEFAULT)	? '16' : '0';
+		$styleRight	= self::STRING_RIGHT;
 
 		return <<<HTML
-				<div id="$id" class="ezuser-$type ezuser-$styleFloat" onclick="$onClick(this)">$message</div>
+					type		=	"button"
+					class		=	"ezuser-button ezuser-$styleRight $styleString$classVerbose ezuser-state-$state"
+					onclick		=	"ezUser.click(this)"
+					onmouseover	=	"ezUser.control(this).setState(1, true)"
+					onmouseout	=	"ezUser.control(this).setState(1, false)"
+					onfocus		=	"ezUser.control(this).setState(2, true)"
+					onblur		=	"ezUser.control(this).setState(2, false)"
 HTML;
+	}
+
+	private static /*.string.*/ function htmlMessage($message = '', $style = self::MESSAGE_STYLE_DEFAULT, $container = '', $type = self::MESSAGE_TYPE_DEFAULT, $extraHTML = '') {
+		$styleRight	= self::STRING_RIGHT;
+		$hidden		= ($message === '') ? ' style="visibility: hidden;"' : '';
+		$message	= "<p class=\"ezuser\">$message</p>";
+		$id		= ($container === '') ? "ezuser-$type" : "$container-$type";
+		$indent		= ($type === self::MESSAGE_TYPE_DIALOG) ? '' : "\t\t";
+
+		return <<<HTML
+$indent		<div id="$id" class="ezuser-$type ezuser-$styleRight ezuser-message-$style" onclick="ezUser.click(this)"$hidden>$message$extraHTML</div>
+HTML;
+	}
+
+	private static /*.string.*/ function htmlContainerStyle($style = self::CONTAINER_STYLE_DIALOG) {
+		return 'class="ezuser-' . $style . '"';
 	}
 
 // ---------------------------------------------------------------------------
@@ -2773,9 +3043,10 @@ HTML;
 
 	private static /*.string.*/ function resultDescription(/*.int.*/ $result, $more = '', $sendToBrowser = false) {
 		switch ($result) {
-			case self::RESULT_EMAILFORMATERR:	$text = "The format of the email address you entered was incorrect. Email addresses should be in the form <em>joe.smith@example.com</em>";
-															break;
-			default:				$text = self::resultText($result);			break;
+			case self::RESULT_EMAILFORMATERR:	$text = "The format of the email address you entered was incorrect. Email addresses are usually in the form <em>joe.smith@example.com</em>";
+								break;
+			default:				$text = '';
+								break;
 		}
 
 		if ($more !== '')	$text .= ": $more";
@@ -2840,7 +3111,7 @@ HTML;
  * @param boolean	$wizard		Display as a wizard within control panel
  * @param boolean	$sendToBrowser	Send HTML to browser?
  */
-	private static /*.string.*/ function htmlAccountForm($mode = '', $newUser = false, $wizard = false, $sendToBrowser = false) {
+	private static /*.array[int]string.*/ function htmlAccountForm($mode = '', $newUser = false, $wizard = false, $sendToBrowser = false) {
 		/* Comment out profiling statements if not needed
 		global $ezuser_profile;
 		$ezuser_profile[self::ACTION_ACCOUNT . '-start'] = ezuser_time();
@@ -2850,7 +3121,8 @@ HTML;
 		$actionResend		= self::ACTION_RESEND;
 		$actionValidate		= self::ACTION_VALIDATE;
 		$accountForm		= self::getInstanceId($action);
-		$container		= ($wizard) ? 'ezuser' : $accountForm;
+//		$container		= ($wizard) ? 'ezuser' : $accountForm;
+		$container		= $accountForm;
 
 		$tagFirstName		= self::TAGNAME_FIRSTNAME;
 		$tagLastName		= self::TAGNAME_LASTNAME;
@@ -2871,11 +3143,10 @@ HTML;
 		$stringRight		= self::STRING_RIGHT;
 		$htmlButtonAction	= self::htmlButton(self::BUTTON_TYPE_ACTION);
 		$htmlButtonHidden	= self::htmlButton(self::BUTTON_TYPE_HIDDEN);
-		$passwordOnFocus	= 'ezUser.passwordFocus';
-		$passwordOnBlur		= 'ezUser.passwordBlur';
 		$htmlInputText		= self::htmlInputText();
-		$messageShort		= self::htmlMessage('* reqd', self::MESSAGE_STYLE_PLAIN, $accountForm);
-		$resendButton		= '';
+		$htmlDialogClose	= self::htmlDialogClose($container);
+		$messageShort		= self::htmlMessage('', self::MESSAGE_STYLE_PLAIN, $accountForm);
+		$messageLong		= self::htmlMessage('', self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_DIALOG);
 
 		if (!isset($mode) || empty($mode)) $mode = '';
 
@@ -2922,7 +3193,6 @@ HTML;
 			$disabled		= '';
 			$htmlOtherButton	= "\t\t\t\t<input id=\"$accountForm-$modeCancel\" data-ezuser-action=\"$action=$modeCancel\" value=\"Cancel\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>\n";
 			$useSavedPassword	= false;
-			$messageLong		= self::htmlMessage('', self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_TEXT);
 			break;
 		case self::ACCOUNT_MODE_DISPLAY:
 			$errors			= $ezUser->errors();
@@ -2944,14 +3214,18 @@ HTML;
 			if ($result === self::RESULT_SUCCESS || $result === self::RESULT_UNDEFINED) {
 				// Show status information
 				$status		= $ezUser->status();
-				$messageLong	= ($status === self::STATUS_CONFIRMED) ? '' : self::statusDescription($status);
-				$messageLong	= self::htmlMessage($messageLong, self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_TEXT);
 
-				if ($status === self::STATUS_PENDING) $resendButton = "\n\t\t\t\t<input id=\"$accountForm-$actionResend\" data-ezuser-action=\"$actionResend\" value=\"Resend\"\n\t\t\t\t\ttabindex\t=\t\"3219\"\n$htmlButtonAction\n\t\t\t\t/>";
+				$resendButton = ($status === self::STATUS_PENDING) ? "\n\t\t\t\t<input id=\"$accountForm-$actionResend\" data-ezuser-action=\"$actionResend\" value=\"Resend\"\n\t\t\t\t\ttabindex\t=\t\"3221\"\n$htmlButtonAction\n\t\t\t\t/>" : '';
+
+				$messageLong	= ($status === self::STATUS_CONFIRMED) ? '' : self::statusDescription($status);
+				$messageLong	= self::htmlMessage($messageLong, self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_DIALOG, $resendButton);
 			} else {
 				// Show result information
+				$messageShort	= self::resultText($result);
+				$messageShort	= self::htmlMessage($messageShort, self::MESSAGE_STYLE_FAIL, $accountForm);
+
 				$messageLong	= self::resultDescription($result);
-				$messageLong	= self::htmlMessage($messageLong, self::MESSAGE_STYLE_FAIL, $accountForm, self::MESSAGE_TYPE_TEXT);
+				$messageLong	= self::htmlMessage($messageLong, self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_DIALOG);
 			}
 
 			break;
@@ -2972,11 +3246,14 @@ HTML;
 			$useSavedPassword	= $newUser;
 
 			if ($result === self::RESULT_SUCCESS || $result === self::RESULT_UNDEFINED) {
-				$messageLong	= self::htmlMessage('', self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_TEXT);
+				$messageShort	= self::htmlMessage('', self::MESSAGE_STYLE_TEXT, $accountForm);
 			} else {
 				// Show result information
+				$messageShort	= self::resultText($result);
+				$messageShort	= self::htmlMessage($messageShort, self::MESSAGE_STYLE_FAIL, $accountForm);
+
 				$messageLong	= self::resultDescription($result);
-				$messageLong	= self::htmlMessage($messageLong, self::MESSAGE_STYLE_FAIL, $accountForm, self::MESSAGE_TYPE_TEXT);
+				$messageLong	= self::htmlMessage($messageLong, self::MESSAGE_STYLE_TEXT, $accountForm, self::MESSAGE_TYPE_DIALOG);
 			}
 
 			break;
@@ -3004,7 +3281,7 @@ HTML;
 		// Form varies slightly if it's working in wizard mode
 		if ($wizard) {
 			$wizardString	= self::STRING_TRUE;
-			$styleHidden	= ' ezuser-hidden';
+			$styleHidden	= ' style="visibility: hidden;"';
 			$htmlNavigation = <<<HTML
 				<input id="$accountForm-next" data-ezuser-action="next" value="Next &gt;"
 					tabindex	=	"3218"
@@ -3023,8 +3300,7 @@ HTML;
 
 		// The lower two fieldsets are transposed if we're in wizard mode
 		$messageFieldset = <<<HTML
-			<fieldset id="$accountForm-fieldset-3" class="ezuser-fieldset$styleHidden">
-$messageLong$resendButton
+			<fieldset id="$accountForm-fieldset-3" class="ezuser-fieldset"$styleHidden>
 				<input id="$accountForm-$tagNewUser"		type="hidden" value="$newString" />
 				<input id="$accountForm-$tagWizard"		type="hidden" value="$wizardString" />
 				<input id="$accountForm-$tagUseSavedPassword"	type="hidden" value="$useSavedPasswordString" />
@@ -3033,7 +3309,7 @@ $messageLong$resendButton
 HTML;
 
 		$buttonsFieldset = <<<HTML
-			<fieldset class="ezuser-fieldset">
+			<fieldset id="$accountForm-fieldset-buttons" class="ezuser-fieldset">
 $messageShort
 				<input id="$accountForm-$buttonId" data-ezuser-action="$buttonAction" value="$buttonText"
 					tabindex	=	"3220"
@@ -3051,6 +3327,7 @@ HTML;
 
 		$html = <<<HTML
 		$modeInfo
+		$htmlDialogClose
 		<form id="$accountForm-form" class="ezuser-form" onsubmit="return false">
 			<fieldset id="$accountForm-fieldset-1" class="ezuser-fieldset">
 				<input id= "$accountForm-$tagEmail"
@@ -3059,21 +3336,21 @@ HTML;
 					type		=	"text"
 $disabled$htmlInputText
 				/>
-				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagEmail">* Email address:</label>
+				<label class="ezuser-label ezuser-$stringRight ezuser-mandatory" for="$accountForm-$tagEmail">Email address:</label>
 				<input id= "$accountForm-$tagFirstName"
 					tabindex	=	"3212"
 					value		=	"$firstName"
 					type		=	"text"
 $disabled$htmlInputText
 				/>
-				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagFirstName">First name:</label>
+				<label class="ezuser-label ezuser-$stringRight ezuser-optional" for="$accountForm-$tagFirstName">First name (optional):</label>
 				<input id= "$accountForm-$tagLastName"
 					tabindex	=	"3213"
 					value		=	"$lastName"
 					type		=	"text"
 $disabled$htmlInputText
 				/>
-				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagLastName">Last name:</label>
+				<label class="ezuser-label ezuser-$stringRight ezuser-optional" for="$accountForm-$tagLastName">Last name (optional):</label>
 			</fieldset>
 			<fieldset id="$accountForm-fieldset-2" class="ezuser-fieldset$styleHidden">
 				<input id= "$accountForm-$tagUsername"
@@ -3083,120 +3360,45 @@ $disabled$htmlInputText
 					onkeypress	=	"return ezUser.keyPress(event)"
 $disabled$htmlInputText
 				/>
-				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagUsername">* Username:</label>
+				<label class="ezuser-label ezuser-$stringRight ezuser-mandatory" for="$accountForm-$tagUsername">Username:</label>
 				<input id= "$accountForm-$tagPassword"
 					tabindex	=	"3215"
 					value		=	"$password"
 					type		=	"password"
-					onfocus		=	"$passwordOnFocus(this)"
-					onblur		=	"$passwordOnBlur(this)"
+					onfocus		=	"ezUser.passwordFocus(this)"
+					onblur		=	"ezUser.passwordBlur(this)"
 $disabled$htmlInputText
 				/>
-				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagPassword">* Password:</label>
+				<label class="ezuser-label ezuser-$stringRight ezuser-mandatory" for="$accountForm-$tagPassword">Password:</label>
 				<input id= "$accountForm-confirm"
 					tabindex	=	"3216"
 					value		=	"$password"
 					type		=	"password"
-					onfocus		=	"$passwordOnFocus(this)"
-					onblur		=	"$passwordOnBlur(this)"
+					onfocus		=	"ezUser.passwordFocus(this)"
+					onblur		=	"ezUser.passwordBlur(this)"
 $disabled$htmlInputText
 				/>
-				<label class="ezuser-label ezuser-$stringRight" for="$accountForm-$tagConfirm">* Confirm password:</label>
+				<label class="ezuser-label ezuser-$stringRight ezuser-mandatory" for="$accountForm-$tagConfirm">Confirm password:</label>
 			</fieldset>
 $bottomFieldsets		</form>
+$messageLong
 HTML;
 
 		/* Comment out profiling statements if not needed
 		$ezuser_profile[self::ACTION_ACCOUNT . '-end'] = ezuser_time();
 		*/
 
-		if ($sendToBrowser) {self::sendXML($html, $container); return '';} else return $html;
-	}
-
-/**
- * HTML for control panel when user is authenticated
- */
-	private static /*.string.*/ function htmlControlPanelAuthenticated($sendToBrowser = false) {
-		$action			= self::ACTION_CONTROLPANEL;
-		$actionSignOut		= self::ACTION_SIGNOUT;
-		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
-		$tagFullName		= self::TAGNAME_FULLNAME;
-		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
-		$message		= self::htmlMessage();
-		$ezUser			= self::getSessionObject();
-		$fullName		= $ezUser->fullName();
-
-		$html = <<<HTML
-		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
-			<fieldset class="ezuser-fieldset">
-				<input id="ezuser-$actionSignOut" data-ezuser-action="$actionSignOut" value="Sign out"
-					tabindex	=	"3222"
-$htmlButtonPreference
-				/>
-				<input id="ezuser-$actionAccountForm" data-ezuser-action="$actionAccountForm" value="My account"
-					tabindex	=	"3221"
-$htmlButtonPreference
-				/>
-				<div id="ezuser-$tagFullName" class="ezuser-$tagFullName">$fullName</div>
-			</fieldset>
-			<fieldset class="ezuser-fieldset">
-$message
-			</fieldset>
-		</form>
-HTML;
-
-		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
-	}
-
-/**
- * HTML for control panel when user is not authenticated
- */
-	private static /*.string.*/ function htmlControlPanelNotAuthenticated($sendToBrowser = false) {
-		$action			= self::ACTION_CONTROLPANEL;
-		$actionSignIn		= self::ACTION_SIGNIN;
-		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
-		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
-		$message		= self::htmlMessage();
-
-		$html = <<<HTML
-		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
-			<fieldset class="ezuser-fieldset">
-				<input id="ezuser-$actionAccountForm" data-ezuser-action="$actionAccountForm" value="Register"
-					tabindex	=	"3222"
-$htmlButtonPreference
-				/>
-				<input id="ezuser-$actionSignIn" data-ezuser-action="$actionSignIn" value="Login"
-					tabindex	=	"3221"
-$htmlButtonPreference
-				/>
-			</fieldset>
-			<fieldset class="ezuser-fieldset">
-$message
-			</fieldset>
-		</form>
-HTML;
-
-		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
-	}
-
-	/**
- * HTML for control panel
- */
-	private static /*.string.*/ function htmlControlPanel($sendToBrowser = false) {
-		$ezUser = self::getSessionObject();
-		$html = ($ezUser->authenticated()) ? self::htmlControlPanelAuthenticated() : self::htmlControlPanelNotAuthenticated();
-		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
+		$data = array($html, $container, self::htmlContainerStyle());
+		if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
 	}
 
 // ---------------------------------------------------------------------------
-	private static /*.string.*/ function htmlSignInForm($username = '', $sendToBrowser = false) {
-		$verbose		= false;	// Set to true to let the user see detailed result information (recommended setting is false)
-//$verbose = true; // debug
-
+	private static /*.array[int]string.*/ function htmlSignInForm($sendToBrowser = false) {
 		$action			= self::ACTION_SIGNIN;
-		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
+		$container		= self::getInstanceId($action);
+		$actionCancel		= self::ACTION_CANCEL;
 		$actionResetRequest	= self::ACTION_RESETREQUEST;
-		$actionBitmap		= self::ACTION_BITMAP;
+		$actionResetRequestForm	= self::ACTION_RESETREQUESTFORM;
 		$tagUsername		= self::TAGNAME_USERNAME;
 		$tagPassword		= self::TAGNAME_PASSWORD;
 		$tagRememberMe		= self::TAGNAME_REMEMBERME;
@@ -3205,24 +3407,26 @@ HTML;
 
 		$stringRight		= self::STRING_RIGHT;
 		$htmlButtonAction	= self::htmlButton(self::BUTTON_TYPE_ACTION);
+		$htmlButtonDefault	= self::htmlButton(self::BUTTON_TYPE_DEFAULT);	// Call to action button
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
-		$passwordOnFocus	= 'ezUser.passwordFocus';
-		$passwordOnBlur		= 'ezUser.passwordBlur';
 		$htmlInputText		= self::htmlInputText();
+		$htmlDialogClose	= self::htmlDialogClose($container);
 		$ezUser			= self::getSessionObject();
-		$result			= $ezUser->result();
-		$URL			= self::thisURL();
+		$result			= (($ezUser->result() < self::RESULT_FAIL) || self::VERBOSE) ? $ezUser->result() : self::RESULT_FAIL; // Only send detailed error information if it's not too revealing
+		$password		= '';
 
 		if ($result <= self::RESULT_SUCCESS) {
-			$message = self::htmlMessage();
-			$verboseHTML = "";
+			$username	= '';
+			$message	= self::htmlMessage('', self::MESSAGE_STYLE_DEFAULT, $container);
+			$verboseHTML	= '';
 		} else {
 			$ezUser->setResult(self::RESULT_UNDEFINED);
-			$username = $ezUser->username();
-			$message = self::htmlMessage("Check username &amp; password", self::MESSAGE_STYLE_FAIL);
 
-			if ($verbose) {
-				$verboseHTML = self::htmlButton(self::BUTTON_TYPE_PREFERENCE, $stringRight, true);
+			$username	= $ezUser->username();
+			$message	= self::htmlMessage(self::resultText($result), self::MESSAGE_STYLE_FAIL, $container);
+
+			if (self::VERBOSE) {
+				$verboseHTML = self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
 				$verboseHTML = <<<HTML
 				<input id="ezuser-$tagVerbose" value="$result"
 $verboseHTML
@@ -3233,11 +3437,9 @@ HTML;
 			}
 		}
 
-		$password = '';
-
 		$html = <<<HTML
-		<img id="ezuser-close" class="ezuser-dialog-control" src="$URL?$actionBitmap=close" onclick="ezUser.click(this)" />
-		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
+		$htmlDialogClose
+		<form id="$container-form" class="ezuser-form" onsubmit="return false">
 			<fieldset class="ezuser-fieldset">
 				<input id= "ezuser-$tagUsername"
 					tabindex	=	"3201"
@@ -3250,21 +3452,21 @@ $htmlInputText
 					tabindex	=	"3202"
 					value		=	"$password"
 					type		=	"password"
-					onfocus		=	"$passwordOnFocus(this)"
-					onblur		=	"$passwordOnBlur(this)"
+					onfocus		=	"ezUser.passwordFocus(this)"
+					onblur		=	"ezUser.passwordBlur(this)"
 $htmlInputText
 				/>
 				<label class="ezuser-label ezuser-$stringRight" for="ezuser-$tagPassword">Password:</label>
 $verboseHTML			</fieldset>
 			<fieldset class="ezuser-fieldset">
 $message
-				<input id="ezuser-$actionAccountForm" data-ezuser-action="$actionAccountForm" value="Register"
+				<input id="ezuser-$actionCancel" data-ezuser-action="$actionCancel" value="Cancel"
 					tabindex	=	"3204"
 $htmlButtonAction
 				/>
-				<input id="ezuser-$action" data-ezuser-action="$action" value="Sign in"
+				<input id="ezuser-$action-button" data-ezuser-action="$action" value="Sign in"
 					tabindex	=	"3203"
-$htmlButtonAction
+$htmlButtonDefault
 				/>
 			</fieldset>
 			<fieldset class="ezuser-fieldset">
@@ -3276,7 +3478,7 @@ $htmlButtonPreference
 					tabindex	=	"3206"
 $htmlButtonPreference
 				/>
-				<input id="ezuser-$actionResetRequest" data-ezuser-action="$actionResetRequest" value="Reset password"
+				<input id="ezuser-$actionResetRequestForm" data-ezuser-action="$actionResetRequest" value="Reset password"
 					tabindex	=	"3205"
 $htmlButtonPreference
 				/>
@@ -3284,33 +3486,147 @@ $htmlButtonPreference
 		</form>
 HTML;
 
-		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
+		$data = array($html, $container, self::htmlContainerStyle());
+		if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
+	}
+
+/**
+ * HTML for control panel when user is authenticated
+ *
+ * @param boolean $sendToBrowser
+ */
+	private static /*.array[int]string.*/ function htmlControlPanelAuthenticated($sendToBrowser = false) {
+		$action			= self::ACTION_CONTROLPANEL;
+		$actionSignOut		= self::ACTION_SIGNOUT;
+		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
+		$container		= self::getInstanceId($action);
+		$tagFullName		= self::TAGNAME_FULLNAME;
+		$htmlButtonFixedWidth	= self::htmlButton(self::BUTTON_TYPE_FIXEDWIDTH);
+//-		$message		= self::htmlMessage();
+		$ezUser			= self::getSessionObject();
+		$fullName		= $ezUser->fullName();
+
+		$html = <<<HTML
+		<form id="$container-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset">
+				<input id="ezuser-$actionSignOut" data-ezuser-action="$actionSignOut" value="Sign out"
+					tabindex	=	"3222"
+					accesskey	=	"S"
+$htmlButtonFixedWidth
+				/>
+				<div id="ezuser-$actionAccountForm" data-ezuser-action="$actionAccountForm" class="ezuser-$tagFullName" onclick = "ezUser.click(this)">$fullName</div>
+			</fieldset>
+		</form>
+HTML;
+//-			<fieldset class="ezuser-fieldset">
+//-$message
+//-			</fieldset>
+//-		</form>
+//-HTML;
+
+		$data = array($html, $container, self::htmlContainerStyle(self::CONTAINER_STYLE_INLINE));
+		if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
+	}
+
+/**
+ * HTML for control panel when user is not authenticated
+ *
+ * @param boolean $sendToBrowser
+ */
+	private static /*.array[int]string.*/ function htmlControlPanelNotAuthenticated($sendToBrowser = false) {
+		$action			= self::ACTION_CONTROLPANEL;
+		$actionSignInForm	= self::ACTION_SIGNINFORM;
+		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
+		$container		= self::getInstanceId($action);
+		$htmlButtonFixedWidth	= self::htmlButton(self::BUTTON_TYPE_FIXEDWIDTH);
+//-		$message		= self::htmlMessage();
+
+		$html = <<<HTML
+		<form id="$container-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset">
+				<input id="ezuser-$actionAccountForm" data-ezuser-action="$actionAccountForm" value="Register"
+					tabindex	=	"3222"
+					accesskey	=	"R"
+$htmlButtonFixedWidth
+				/>
+				<input id="ezuser-$actionSignInForm" data-ezuser-action="$actionSignInForm" value="Sign in"
+					tabindex	=	"3221"
+					accesskey	=	"S"
+$htmlButtonFixedWidth
+				/>
+			</fieldset>
+		</form>
+HTML;
+//-			<fieldset class="ezuser-fieldset">
+//-$message
+//-			</fieldset>
+//-		</form>
+//-HTML;
+
+		$data = array($html, $container, self::htmlContainerStyle(self::CONTAINER_STYLE_INLINE));
+		if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
+	}
+
+/**
+ * HTML for control panel
+ *
+ * @param boolean $sendToBrowser
+ */
+	private static /*.array[int]string.*/ function htmlControlPanel($sendToBrowser = false) {
+		$ezUser = self::getSessionObject();
+		$data = ($ezUser->authenticated()) ? self::htmlControlPanelAuthenticated() : self::htmlControlPanelNotAuthenticated();
+		if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
+	}
+
+/**
+ * Process results of sign-in attempt
+ *
+ * @param boolean $sendToBrowser
+ */
+	private static /*.mixed.*/ function htmlSignInResults($sendToBrowser = false) {
+		$ezUser = self::getSessionObject();
+
+		if ($ezUser->authenticated()) {
+			$data = self::htmlControlPanelAuthenticated();
+			if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
+		} else {
+			$result		= (($ezUser->result() < self::RESULT_FAIL) || self::VERBOSE) ? $ezUser->result() : self::RESULT_FAIL; // Only send detailed error information if it's not too revealing
+			$message	= self::resultText($result);
+			$container	= self::getInstanceId(self::ACTION_SIGNIN) . '-' . self::MESSAGE_TYPE_DEFAULT;
+
+			if ($sendToBrowser) {self::sendContent($message, $container); return '';} else return $message;
+		}
 	}
 
 // ---------------------------------------------------------------------------
-	private static /*.string.*/ function htmlResetRequest ($username = '', $sendToBrowser = false) {
+	private static /*.array[int]string.*/ function htmlResetRequest ($username = '', $sendToBrowser = false) {
 		$action			= self::ACTION_RESETREQUEST;
+		$actionReset		= self::ACTION_RESET;
 		$actionCancel		= self::ACTION_CANCEL;
 		$actionResetPassword	= self::ACTION_RESETPASSWORD;
 		$actionControlPanel	= self::ACTION_CONTROLPANEL;
+		$container		= self::getInstanceId($actionReset);
+		$htmlDialogClose	= self::htmlDialogClose($container);
 		$tagUsername		= self::TAGNAME_USERNAME;
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
 		$stringLeft		= self::STRING_LEFT;
-		$htmlInputText		= self::htmlInputText($stringLeft);
+		$stringRight		= self::STRING_RIGHT;
+		$htmlInputText		= self::htmlInputText($stringRight);
 
 		$html = <<<HTML
-		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
-			<fieldset class="ezuser-fieldset-float">
-					<label class="ezuser-label ezuser-$stringLeft" for="ezuser-$tagUsername">Username or email address:</label>
-					<input style="clear:both;" id="ezuser-$tagUsername"
+		$htmlDialogClose
+		<form id="$container-form" class="ezuser-form" onsubmit="return false">
+			<fieldset class="ezuser-fieldset">
+				<input id="ezuser-$tagUsername"
 					tabindex	=	"3241"
 					value		=	"$username"
 					type		=	"text"
 $htmlInputText
 				/>
+				<label class="ezuser-label ezuser-$stringRight" for="ezuser-$tagUsername">Username or email:</label>
 			</fieldset>
 			<fieldset class="ezuser-fieldset">
-				<input id="ezuser-$actionCancel" data-ezuser-action="$actionControlPanel" value="Cancel"
+				<input id="$container-$actionCancel" data-ezuser-action="$actionControlPanel" value="Cancel"
 					tabindex	=	"3243"
 $htmlButtonPreference
 				/>
@@ -3322,7 +3638,8 @@ $htmlButtonPreference
 		</form>
 HTML;
 
-		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
+		$data = array($html, $container, self::htmlContainerStyle());
+		if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
 	}
 
 /**
@@ -3334,6 +3651,7 @@ HTML;
  * We have no context in which to display it and no knowledge of the
  * site that ezUser is living in, so we are forced to display a bare page.
  *
+ * @param ezUser_base $ezUser
  * @param boolean $sendToBrowser
  */
 	private static /*.string.*/ function htmlResetPassword (ezUser_base $ezUser, $sendToBrowser = false) {
@@ -3344,23 +3662,24 @@ HTML;
 		$htmlInputText		= self::htmlInputText();
 		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_ACTION);
 		$stringRight		= self::STRING_RIGHT;
-		$passwordOnFocus	= 'ezUser.passwordFocus';
-		$passwordOnBlur		= 'ezUser.passwordBlur';
 		$fullName		= $ezUser->fullName();
-		$message		= self::htmlMessage('', self::MESSAGE_STYLE_PLAIN, 'ezuser', self::MESSAGE_TYPE_TEXT);
+		$message		= self::htmlMessage('', self::MESSAGE_STYLE_PLAIN, '', self::MESSAGE_TYPE_DIALOG);
 
 		$html = <<<HTML
 	<div id="ezuser">
 		<h4 class="ezuser-heading">Welcome $fullName</h4>
+		<p class="ezuser-message-plain">You should always check the address bar before entering your password on any web site. The fact that we know your name is $fullName should also reassure you this is the site for which you requested a password reset.</p>
+		<p class="ezuser-message-plain">If you didn't ask for a password reset for this web site then you should close this browser window now.</p>
+		<hr />
 		<p class="ezuser-message-plain">Please enter a new password for your account:</p>
-		<form id="$container-form" class="ezuser-form" onsubmit="return false">
+		<form id="$container-form" class="ezuser-form ezuser-inline" onsubmit="return false">
 			<fieldset class="ezuser-fieldset">
 				<input id= "$container-$tagPassword"
 					tabindex	=	"3241"
 					value		=	""
 					type		=	"password"
-					onfocus		=	"$passwordOnFocus(this)"
-					onblur		=	"$passwordOnBlur(this)"
+					onfocus		=	"ezUser.passwordFocus(this)"
+					onblur		=	"ezUser.passwordBlur(this)"
 $htmlInputText
 				/>
 				<label class="ezuser-label ezuser-$stringRight" for="$container-$tagPassword">Password:</label>
@@ -3368,8 +3687,8 @@ $htmlInputText
 					tabindex	=	"3242"
 					value		=	""
 					type		=	"password"
-					onfocus		=	"$passwordOnFocus(this)"
-					onblur		=	"$passwordOnBlur(this)"
+					onfocus		=	"ezUser.passwordFocus(this)"
+					onblur		=	"ezUser.passwordBlur(this)"
 $htmlInputText
 				/>
 				<label class="ezuser-label ezuser-$stringRight" for="$container-$tagConfirm">Confirm password:</label>
@@ -3393,7 +3712,7 @@ HTML;
 	}
 
 	private static /*.string.*/ function htmlMessagePage (/*.string.*/ $title, /*.string.*/ $message, $sendToBrowser = false) {
-		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_PLAIN, 'ezuser', self::MESSAGE_TYPE_TEXT);
+		$message = self::htmlMessage($message, self::MESSAGE_STYLE_TEXT, '');
 
 		$html = <<<HTML
 	<div id="ezuser">
@@ -3408,29 +3727,33 @@ HTML;
 	}
 
 // ---------------------------------------------------------------------------
-	private static /*.string.*/ function htmlMessageForm ($message = '', $action = self::ACTION_CONTROLPANEL, $sendToBrowser = false) {
+	private static /*.array[int]string.*/ function htmlMessageForm (/*.string.*/ $message, /*.string.*/ $action, $sendToBrowser = false) {
+		$container		= self::getInstanceId($action);
+		$htmlDialogClose	= self::htmlDialogClose($container);
 		$actionControlPanel	= self::ACTION_CONTROLPANEL;
-		$htmlButtonPreference	= self::htmlButton(self::BUTTON_TYPE_PREFERENCE);
-		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_TEXT, '', self::MESSAGE_TYPE_TEXT);
+		$htmlButtonFixedWidth	= self::htmlButton(self::BUTTON_TYPE_FIXEDWIDTH);
+		$message		= self::htmlMessage($message, self::MESSAGE_STYLE_TEXT, '');
 
 		$html = <<<HTML
-		<form id="ezuser-$action-form" class="ezuser-form" onsubmit="return false">
+		$htmlDialogClose
+		<form id="$container-form" class="ezuser-form" onsubmit="return false">
 			<fieldset class="ezuser-fieldset">
 $message
 				<input id="ezuser-OK" data-ezuser-action="$actionControlPanel" value="OK"
 					tabindex	=	"3241"
-$htmlButtonPreference
+$htmlButtonFixedWidth
 				/>
 			</fieldset>
 		</form>
 HTML;
 
-		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
+		$data = array($html, $container, self::htmlContainerStyle());
+		if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
 	}
 
-	private static /*.string.*/ function htmlResultForm (/*.int.*/ $result, $more = '', $sendToBrowser = false) {
-		$html = self::htmlMessageForm(self::resultText($result, $more), self::ACTION_RESULTFORM);
-		if ($sendToBrowser) {self::sendXML($html); return '';} else return $html;
+	private static /*.array[int]string.*/ function htmlResultForm (/*.int.*/ $result, $more = '', $sendToBrowser = false) {
+		$data = self::htmlMessageForm(self::resultText($result, $more), self::ACTION_RESULTFORM);
+		if ($sendToBrowser) {self::sendXML($data); return array('', '', '');} else return $data;
 	}
 
 // ---------------------------------------------------------------------------
@@ -3456,13 +3779,19 @@ HTML;
 
 /**
  * Other MIME types: CSS, Javascript, bitmaps
+ *
+ * @param boolean $sendToBrowser
  */
-	private static /*.string.*/ function htmlStyleSheet(/*.boolean.*/ $sendToBrowser = false) {
+	private static /*.string.*/ function htmlStyleSheet($sendToBrowser = false) {
 		$accountForm		= self::getInstanceId(self::ACTION_ACCOUNT);
+		$signInForm		= self::getInstanceId(self::ACTION_SIGNIN);
+		$resetForm		= self::getInstanceId(self::ACTION_RESET);
 		$tagFullName		= self::TAGNAME_FULLNAME;
 		$tagVerbose		= self::TAGNAME_VERBOSE;
 		$buttonTypeAction	= self::BUTTON_TYPE_ACTION;
+		$buttonTypeDefault	= self::BUTTON_TYPE_DEFAULT;
 		$buttonTypePreference	= self::BUTTON_TYPE_PREFERENCE;
+		$buttonTypeFixedWidth	= self::BUTTON_TYPE_FIXEDWIDTH;
 
 		$css = <<<GENERATED
 @charset "UTF-8";
@@ -3509,7 +3838,7 @@ HTML;
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.26.1 - Drag-and-drop dialog boxes
+ * @version	0.27.5 - PHPLint is even tighter, so some code style changes were necessary
  */
 
 .dummy {} /* Webkit is ignoring the first item so we'll put a dummy one in */
@@ -3519,17 +3848,23 @@ HTML;
 	padding:0;
 	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
 	font-size:11px;
+	line-height:150%;
 }
 
-pre.ezuser {font-family:Consolas, Courier New, Courier, fixedsys;}
-
+pre.ezuser		{font-family:Consolas, Courier New, Courier, fixedsys;}
+.ezuser-body		{margin:4em;width:300px;}
+.ezuser-body .ezuser-heading
+			{padding:0;font-size:16px;}
+.ezuser-body .ezuser-fieldset
+			{float:left;width:280px;}
 .ezuser-left		{float:left;}
 .ezuser-right		{float:right;}
-.ezuser-hidden	{display:none;}
-.ezuser-heading	{padding:6px;margin:0 0 1em 0;}
+.ezuser-mandatory	{color:#000000;}
+.ezuser-optional	{color:#444444;}
+.ezuser-heading	{padding:6px;margin:0 0 1em;}
 .ezuser-dialog-control	{cursor:pointer;}
 
-img#ezuser-close {
+img.ezuser-dialog-close {
 	width:40px;
 	height:40px;
 	position:absolute;
@@ -3537,64 +3872,51 @@ img#ezuser-close {
 	top:-25px;
 }
 
-div.ezuser-float {
-	text-align: left;
-	width: 300px;
-	height: 100px;
+div.ezuser-dialog {
+	text-align:left;
 	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
 	font-size:11px;
 	padding:1.5em;
 	border:1em solid #CCCCCC;
-	border-radius: 2em;
-	-icab-border-radius: 2em;	/* iCab */
-	-khtml-border-radius: 2em;	/* Konqueror */
-	-moz-border-radius: 2em;	/* Firefox */
-	-o-border-radius: 2em;		/* Opera */
-	-webkit-border-radius: 2em;	/* Chrome, Safari */
-	box-shadow: 0.4em 0.4em 1.8em #555555;
-	-icab-box-shadow: 0.4em 0.4em 1.8em #555555;		/* iCab */
-	-khtml-box-shadow: 0.4em 0.4em 1.8em #555555;		/* Konqueror */
-	-moz-box-shadow: 0.4em 0.4em 1.8em #555555;		/* Firefox */
-	-o-box-shadow: 0.4em 0.4em 1.8em #555555;		/* Opera */
-	-webkit-box-shadow: 0.4em 0.4em 1.8em #555555;	/* Chrome, Safari */
-	line-height:100%;
+	border-radius:2em;
+	-icab-border-radius:2em;	/* iCab */
+	-khtml-border-radius:2em;	/* Konqueror */
+	-moz-border-radius:2em;		/* Firefox */
+	-o-border-radius:2em;		/* Opera */
+	-webkit-border-radius:2em;	/* Chrome, Safari */
+	box-shadow:0.4em 0.4em 1.8em #555555;
+	-icab-box-shadow:0.4em 0.4em 1.8em #555555;	/* iCab */
+	-khtml-box-shadow:0.4em 0.4em 1.8em #555555;	/* Konqueror */
+	-moz-box-shadow:0.4em 0.4em 1.8em #555555;	/* Firefox */
+	-o-box-shadow:0.4em 0.4em 1.8em #555555;	/* Opera */
+	-webkit-box-shadow:0.4em 0.4em 1.8em #555555;	/* Chrome, Safari */
 	background-color:#EEEEEE;
 }
 
-div#$accountForm {
-	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
-	font-size:12px;
-	line-height:100%;
-	float:left;
-}
+div#$signInForm		{width:300px;height:110px;}
+div#$accountForm	{width:300px;height:170px;font-size:12px;}
+div#$accountForm-dialog	{width:304px;height:64px;position:absolute;top:222px;left:-1em;}
+div#$resetForm		{width:300px;height:60px;}
 
 div.ezuser-message {
 	float:left;
+	margin-top:4px;
 	text-align:center;
 	font-weight:normal;
 }
 
-div.ezuser-text {
-	width:286px;
-	float:left;
-	padding:0;
-	text-align:justify;
-	margin:7px 0 7px 0;
-	line-height:16px;
-}
-
-p.ezuser-message-plain	{margin:0;padding:6px;}
-p.ezuser-message-info	{margin:0;padding:6px;background-color:#FFCC00;color:#000000;}
-p.ezuser-message-text	{margin:0;padding:6px;background-color:#EEEEEE;color:#000000;}
-p.ezuser-message-fail	{margin:0;padding:6px;background-color:#FF0000;color:#FFFFFF;font-weight:bold;}
-p.ezuser-message-hidden	{display:none;}
+div.ezuser-message-plain	{border-color:#CCCCCC;}
+div.ezuser-message-info		{border-color:#00FFFF;}
+div.ezuser-message-text		{text-align:left;}
+div.ezuser-message-fail		{border-color:#FF0000;font-weight:bold;}
 
 div.ezuser-$tagFullName {
 	float:right;
-	margin:4px 0 0 0;
+	margin:2px 0 0;
 	padding:6px;
 	color:#555555;
 	font-weight:bold;
+	cursor:pointer;
 }
 
 a.ezuser-keydragdrop:link {
@@ -3611,8 +3933,8 @@ a.ezuser-keydragdrop:link {
 }
 
 form.ezuser-form			{margin:0;}
-fieldset.ezuser-fieldset		{margin:0;padding:0;border:0;clear:both;float:right;width:286px;}
-fieldset.ezuser-fieldset-float	{margin:0;padding:0;border:0;clear:both;float:right;}
+fieldset.ezuser-fieldset		{margin:0 0 0.5em;padding:0;border:0;clear:both;float:right;width:300px;}
+fieldset.ezuser-fieldset-dialog	{margin:0;padding:0;border:0;clear:both;float:right;}
 label.ezuser-label			{padding:4px;}
 
 input.ezuser-text {
@@ -3622,40 +3944,90 @@ input.ezuser-text {
 }
 
 input.ezuser-button {
-	padding:2px;
 	font-family:"Segoe UI",Geneva,Tahoma,Arial,Helvetica,sans-serif;
-	border-style:solid;
-	border-width:1px;
-	border-radius: 4px;
-	-icab-border-radius: 4px;	/* iCab */
-	-khtml-border-radius: 4px;	/* Konqueror */
-	-moz-border-radius: 4px;	/* Firefox */
-	-o-border-radius: 4px;		/* Opera */
-	-webkit-border-radius: 4px;	/* Chrome, Safari */
-	cursor:pointer;
+	border-radius:5px;
+	-icab-border-radius:5px;	/* iCab */
+	-khtml-border-radius:5px;	/* Konqueror */
+	-moz-border-radius:5px;	/* Firefox */
+	-o-border-radius:5px;		/* Opera */
+	-webkit-border-radius:5px;	/* Chrome, Safari */
 }
 
-input.ezuser-$buttonTypeAction {
+input.ezuser-fixedwidth {width:40px;}
+
+input.ezuser-$buttonTypeAction,
+input.ezuser-$buttonTypeDefault {
+	padding:2px 2px 3px;
 	font-size:12px;
 	width:52px;
 	margin:0 0 0 6px;
 }
 
+input.ezuser-$buttonTypeDefault {
+	font-weight:bold;
+}
+
 input.ezuser-$buttonTypePreference {
+	padding:3px 3px 4px;
 	font-size:10px;
-	margin:4px 0 0 6px;
+	margin:4px 1px 1px 6px;
+}
+
+input.ezuser-$buttonTypeFixedWidth {
+	width:50px;
+	padding:3px 3px 4px;
+	font-size:10px;
+	margin:4px 1px 1px 2px;
 }
 
 input.ezuser-preference-$tagVerbose {float:left;margin:0;}
 
-input.ezuser-buttonstate-0 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
-input.ezuser-buttonstate-1 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
-input.ezuser-buttonstate-2 {background-color:#FFFFFF;color:#444444;border-color:#666666 #333333 #333333 #666666;}
-input.ezuser-buttonstate-3 {background-color:#FFFFFF;color:#444444;border-color:#FF9900 #CC6600 #CC6600 #FF9900;}
-input.ezuser-buttonstate-4 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
-input.ezuser-buttonstate-5 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
-input.ezuser-buttonstate-6 {background-color:#CCCCCC;color:#222222;border-color:#333333 #666666 #666666 #333333;}
-input.ezuser-buttonstate-7 {background-color:#CCCCCC;color:#222222;border-color:#CC6600 #FF9900 #FF9900 #CC6600;}
+form.ezuser-form input[type="submit"]::-moz-focus-inner, input[type="button"]::-moz-focus-inner	{border:none;}
+form.ezuser-form input[type="submit"]:focus, input[type="button"]:focus	{outline:none;}
+
+/*
+State settings are derived from four binary states
+Each state is mapped to a bit in the state number
+i.e. the state number is the sum of whichever of the
+following states is ON:
+
+Mouse is over button		1
+Button has focus		2
+Toggle button has been selected	4
+Button is disabled		8
+Default				16
+
+If none of these is true then clearly the state is 0
+If, for example, the button is toggled ON and the mouse
+is over it then the state is 6
+
+We'll assume the default button isn't going to be disabled
+or toggleable so we don't need to style for those cases
+*/
+input.ezuser-state-0	{background:#888888;color:#FFFFFF;border:1px solid #FFFFFF;cursor:pointer;}
+input.ezuser-state-1	{background:#888888;color:#FFFFFF;border:1px solid #FF8000;cursor:pointer;}
+input.ezuser-state-2	{background:#888888;color:#FFFFFF;border:1px solid #000000;cursor:pointer;}
+input.ezuser-state-3	{background:#888888;color:#FFFFFF;border:1px solid #FF8000;cursor:pointer;}
+
+input.ezuser-state-4	{background:#E8E8E8;color:#686868;border:1px solid #A8A8A8;cursor:pointer;}
+input.ezuser-state-5	{background:#E8E8E8;color:#686868;border:1px solid #FF8000;cursor:pointer;}
+input.ezuser-state-6	{background:#E8E8E8;color:#686868;border:1px solid #000000;cursor:pointer;}
+input.ezuser-state-7	{background:#E8E8E8;color:#686868;border:1px solid #FF8000;cursor:pointer;}
+
+input.ezuser-state-8	{background:#C8C8C8;color:#FFFFFF;border:1px solid #FFFFFF;cursor:default;}
+input.ezuser-state-9	{background:#C8C8C8;color:#FFFFFF;border:1px solid #FFFFFF;cursor:default;}
+input.ezuser-state-10	{background:#C8C8C8;color:#FFFFFF;border:1px solid #A8A8A8;cursor:default;}
+input.ezuser-state-11	{background:#C8C8C8;color:#FFFFFF;border:1px solid #FFFFFF;cursor:default;}
+
+input.ezuser-state-12	{background:#E8E8E8;color:#C8C8C8;border:1px solid #FFFFFF;cursor:default;}
+input.ezuser-state-13	{background:#E8E8E8;color:#C8C8C8;border:1px solid #FFFFFF;cursor:default;}
+input.ezuser-state-14	{background:#E8E8E8;color:#C8C8C8;border:1px solid #C8C8C8;cursor:default;}
+input.ezuser-state-15	{background:#E8E8E8;color:#C8C8C8;border:1px solid #FFFFFF;cursor:default;}
+
+input.ezuser-state-16	{background:#686868;color:#FFFF00;border:1px solid #FFFFFF;cursor:pointer;}
+input.ezuser-state-17	{background:#686868;color:#FFFF00;border:1px solid #FF8000;cursor:pointer;}
+input.ezuser-state-18	{background:#686868;color:#FFFF00;border:1px solid #000000;cursor:pointer;}
+input.ezuser-state-19	{background:#686868;color:#FFFF00;border:1px solid #FF8000;cursor:pointer;}
 
 GENERATED;
 // Generated code - do not modify in built package
@@ -3665,8 +4037,6 @@ GENERATED;
 
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function htmlJavascript($containerList = '', $sendToBrowser = false) {
-		$accountForm		= self::getInstanceId(self::ACTION_ACCOUNT);
-
 		$sessionName		= ini_get('session.name');
 		$remoteAddress		= $_SERVER['REMOTE_ADDR'];
 		$URL			= self::thisURL();
@@ -3690,8 +4060,10 @@ GENERATED;
 		$tagWizard		= self::TAGNAME_WIZARD;
 
 		$action			= self::ACTION;
+		$actionAccount		= self::ACTION_ACCOUNT;
 		$actionAccountForm	= self::ACTION_ACCOUNTFORM;
-		$actionAccountWizard	= self::ACTION_ACCOUNTWIZARD;
+//		$actionAccountWizard	= self::ACTION_ACCOUNTWIZARD;
+		$actionControlPanel	= self::ACTION_CONTROLPANEL;
 		$actionValidate		= self::ACTION_VALIDATE;
 		$actionSignIn		= self::ACTION_SIGNIN;
 		$actionCancel		= self::ACTION_CANCEL;
@@ -3702,9 +4074,16 @@ GENERATED;
 		$actionResetPassword	= self::ACTION_RESETPASSWORD;
 		$actionResetRequest	= self::ACTION_RESETREQUEST;
 
+		$accountForm		= self::getInstanceId($actionAccount);
+		$signInForm		= self::getInstanceId($actionSignIn);
+		$controlPanelForm	= self::getInstanceId($actionControlPanel);
+		$resetForm		= self::getInstanceId($actionReset);
+
 		$modeEdit		= self::ACCOUNT_MODE_EDIT;
 
-		$messageTypeText	= self::MESSAGE_TYPE_TEXT;
+		$messageTypeDialog	= self::MESSAGE_TYPE_DIALOG;
+		$messageTypeDefault	= self::MESSAGE_TYPE_DEFAULT;
+		$containerStyleDialog	= self::CONTAINER_STYLE_DIALOG;
 		$delimPlus		= self::DELIMITER_PLUS;
 		$stringRight		= self::STRING_RIGHT;
 		$stringTrue		= self::STRING_TRUE;
@@ -3712,14 +4091,14 @@ GENERATED;
 		$passwordMask		= self::PASSWORD_MASK;
 
 		$accountPage		= self::getSetting(self::SETTINGS_ACCOUNTPAGE);
-		$accountClick		= ($accountPage === '') ? "ezUser.ajax.execute('$actionAccountWizard')" : "window.location = '$folder/$accountPage'";
+		$accountClick		= ($accountPage === '') ? "ezUser.action('$actionAccount')" : "window.location = '$folder/$accountPage'";
 
 		// Append code to request container content
 		if ($containerList === '') {
 			$immediateJavascript = '';
 		} else {
 			// Space-separated list of containers to fill
-			$immediateJavascript = "ezUser.ajax.execute('" . (string) str_replace(self::DELIMITER_SPACE, self::DELIMITER_PLUS, $containerList) . "');";
+			$immediateJavascript = "ezUser.action('" . (string) str_replace(self::DELIMITER_SPACE, self::DELIMITER_PLUS, $containerList) . "');";
 		}
 
 		$js = <<<GENERATED
@@ -3766,7 +4145,7 @@ GENERATED;
  * @copyright	2008-2010 Dominic Sayers
  * @license	http://www.opensource.org/licenses/bsd-license.php BSD License
  * @link	http://code.google.com/p/ezuser/
- * @version	0.26.1 - Drag-and-drop dialog boxes
+ * @version	0.27.5 - PHPLint is even tighter, so some code style changes were necessary
  */
 
 /*jslint eqeqeq: true, immed: true, nomen: true, onevar: true, regexp: true, undef: true */
@@ -3908,118 +4287,233 @@ function SHA256(s){
 }
 // End of generated code
 
-	this.getControl	= function (id)		{return document.getElementById(id);};
-	this.getValue	= function (id)		{return this.getControl(id).value;};
-	this.setValue	= function (id, value)	{this.getControl(id).value = value;};
-
 	var that = this;
 
 // ---------------------------------------------------------------------------
-	this.classNames = {
-		list: function(control) {
-			return (control.className) ? control.className.split(' ') : [];
-		},
+	this.control = function(id_or_control) {
+		// control private members
+		var id, control, nodeList;
 
-		findIndex: function(control, name, remove) {
-			var	classList	= this.list(control),
-				index		= false,
-				count		= classList.length,
-				nameLower	= name.toLowerCase(),
-				i;
+		// Identify the control
+		if (typeof id_or_control === 'string') {
+			// Look for element with this id
+			id	= id_or_control;
+			control	= document.getElementById(id);
 
-			if (arguments.length < 3) {remove = false;} // Assume we aren't going to remove the class name
+			if (control === null || typeof control === 'undefined') {
+				// ...otherwise look for element with this name
+				nodeList = document.getElementsByName(id);
 
-			for (i = 0; i < count; i++) {
-				if (nameLower === classList[i].toLowerCase()) {
-					index = i;
+				if (nodeList.length === 0) {
+					// ...final resort is to look for elements with this tag (e.g. 'body')
+					nodeList = document.getElementsByTagName(id);
+					if (nodeList.length === 0) {
+						control = {};
+					} else {
+						control = nodeList[0];
+					}
+				} else {
+					control = nodeList[0]
+				}
+			}
+		} else {
+			id	= id_or_control.id;
+			control	= id_or_control;
+		}
+
+		function windowRect() {
+			var	width	= 0,
+				height	= 0;
+
+			if (typeof window.innerWidth === 'number') {
+				width	= window.innerWidth;
+				height	= window.innerHeight;
+			} else if (document.documentElement && document.documentElement.clientWidth) {
+				width	= document.documentElement.clientWidth;
+				height	= document.documentElement.clientHeight;
+			} else if (document.body && document.body.clientWidth) {
+				width	= document.body.clientWidth;
+				height	= document.body.clientHeight;
+			}
+
+			return {width: width, height: height};
+		}
+
+		function controlRect() {return {width: control.offsetWidth, height: control.offsetHeight};}
+
+		// control "public" interface (only public within ezUser class)
+		// Extends underlying control's public members
+		control.hide	= function()		{if (control.style)				{control.style.visibility = 'hidden';}	return control;}
+		control.show	= function()		{if (control.style)				{control.style.visibility = '';}	return control;}
+		control.fill	= function(html)	{if (typeof control.innerHTML === 'string')	{control.innerHTML = html;}		return control;}
+		control.append	= function(html)	{if (typeof control.innerHTML === 'string')	{control.innerHTML += html;}		return control;}
+
+		if (!control.forms) control.forms = function() {return control.getElementsByTagName('form');}
+
+		control.classNames = {
+			add: function(name) {
+				if (typeof name !== 'string') {return control;}
+
+				var	classString	= control.className.toLowerCase(),
+					classArray	= classString.split(' '),
+					i		= classArray.indexOf(name.toLowerCase());
+
+				if (i === -1) {control.className = (control.className) ? control.className + ' ' + name : name;}
+				return control;	// NB could get repeated class names if name is passed as 'a b' and control already has class a or b
+			},
+
+			remove: function(name) {
+				if (typeof name !== 'string') {return control;}
+
+				var	classString	= control.className.toLowerCase(),
+					classArray	= classString.split(' '),
+					i		= classArray.indexOf(name.toLowerCase());
+
+				if (i !== -1) {
+					classArray = control.className.split(' ');
+					classArray.splice(i, 1);
+					control.className = classArray.join(' ');
+				}
+
+				return control;
+			}
+		}
+
+		control.event = {
+			add: function (eventName, functionHandle) {
+				if	(control.addEventListener)	{control.addEventListener(eventName, functionHandle, false);}
+				else if	(control.attachEvent)		{control.attachEvent('on' + eventName, functionHandle);}
+			},
+
+			remove: function (eventName, functionHandle) {
+				if	(control.removeEventListener)	{control.removeEventListener(eventName, functionHandle, false);}
+				else if	(control.detachEvent)		{control.detachEvent('on' + eventName, functionHandle);}
+			},
+
+			fire: function(eventType, detail) {
+				var e, result; // Returned result from dispatchEvent
+
+				switch (eventType.toLowerCase()) {
+				case 'keyup':
+				case 'keydown':
+					if (document.createEventObject) {
+						// IE
+						e		= document.createEventObject();
+						e.keyCode	= detail;
+						result		= control.fireEvent('on' + eventType);
+					} else if (window.KeyEvent) {
+						// Firefox
+						e		= document.createEvent('KeyEvents');
+						e.initKeyEvent(eventType, true, true, window, false, false, false, false, detail, 0);
+						result		= control.dispatchEvent(e);
+					} else {
+						e		= document.createEvent('UIEvents');
+						e.initUIEvent(eventType, true, true, window, 1);
+						e.keyCode	= detail;
+						result		= control.dispatchEvent(e);
+					}
+
+					break;
+				case 'focus':
+				case 'blur':
+				case 'change':
+					if (document.createEventObject) {
+						// IE
+						e		= document.createEventObject();
+						result		= control.fireEvent('on' + eventType);
+					} else {
+						e		= document.createEvent('UIEvents');
+						e.initUIEvent(eventType, true, true, window, 1);
+						result		= control.dispatchEvent(e);
+					}
+
+					break;
+				case 'click':
+					if (document.createEventObject) {
+						// IE
+						e		= document.createEventObject();
+						result		= control.fireEvent('on' + eventType);
+					} else {
+						e		= document.createEvent('MouseEvents');
+						e.initMouseEvent(eventType, true, true, window, 1);
+						result		= control.dispatchEvent(e);
+					}
+
 					break;
 				}
+
+				return result;
 			}
-
-			if (remove && (index !== false)) {
-				classList.splice(index, 1);
-				control.className = classList.join(' ');
-			}
-
-			return index;
-		},
-
-		add: function(control, name) {
-			if (this.findIndex(control, name) === false) control.className = (control.className) ? control.className + ' ' + name : name;
-		},
-
-		remove: function(control, name) {
-			this.findIndex(control, name, true);
 		}
-	}
 
-	this.event = {
-		add: function (control, eventName, functionHandle) {
-			if	(control.addEventListener)	{control.addEventListener(eventName, functionHandle, false);}
-			else if	(control.attachEvent)		{control.attachEvent('on' + eventName, functionHandle);}
-		},
+		control.setFocus = function() {
+			var doEvent;
 
-		remove: function (control, eventName, functionHandle) {
-			if	(control.removeEventListener)	{control.removeEventListener(eventName, functionHandle, false);}
-			else if	(control.detachEvent)		{control.detachEvent('on' + eventName, functionHandle);}
-		},
+			if (control.disabled || !control.focus) {return control;}
 
-		fire: function(control, eventType, detail) {
-			var e, result; // Returned result from dispatchEvent
-
-			switch (eventType.toLowerCase()) {
-			case 'keyup':
-			case 'keydown':
-				if (document.createEventObject) {
-					// IE
-					e		= document.createEventObject();
-					e.keyCode	= detail;
-					result		= control.fireEvent('on' + eventType);
-				} else if (window.KeyEvent) {
-					// Firefox
-					e		= document.createEvent('KeyEvents');
-					e.initKeyEvent(eventType, true, true, window, false, false, false, false, detail, 0);
-					result		= control.dispatchEvent(e);
-				} else {
-					e		= document.createEvent('UIEvents');
-					e.initUIEvent(eventType, true, true, window, 1);
-					e.keyCode	= detail;
-					result		= control.dispatchEvent(e);
-				}
-
-				break;
-			case 'focus':
-			case 'blur':
-			case 'change':
-				if (document.createEventObject) {
-					// IE
-					e		= document.createEventObject();
-					result		= control.fireEvent('on' + eventType);
-				} else {
-					e		= document.createEvent('UIEvents');
-					e.initUIEvent(eventType, true, true, window, 1);
-					result		= control.dispatchEvent(e);
-				}
-
-				break;
-			case 'click':
-				if (document.createEventObject) {
-					// IE
-					e		= document.createEventObject();
-					result		= control.fireEvent('on' + eventType);
-				} else {
-					e		= document.createEvent('MouseEvents');
-					e.initMouseEvent(eventType, true, true, window, 1);
-					result		= control.dispatchEvent(e);
-				}
-
-				break;
+			if (typeof document.activeElement.onBlur === 'function') {that.control(document.activeElement).event.fire('blur');}
+			if (typeof document.activeElement.onblur === 'function') {that.control(document.activeElement).event.fire('blur');}
+			if (typeof control.onFocus === 'function') {doEvent = that.control(document.activeElement).event.fire('focus');}
+			if (typeof control.onfocus === 'function') {doEvent = that.control(document.activeElement).event.fire('focus');}
+			if (doEvent !== false) {control.focus();}
+			control.select();
+			return control;
 			}
 
-			return result;
-		}
-	}
+		control.setState = function (eventID, setOn) {
+			// eventID	1 = mouseover/mouseout
+			//		2 = focus/blur
+			//		4 = selected/unselected
+			//		8 = disabled/enabled
+			//		16 = default/not default
 
+			if (control === null) {return false;}
+
+			var	baseClass	= control.className,
+				stateClass	= 'ezuser-state-',
+				pos		= baseClass.indexOf(stateClass),
+				currentState	= /(?:ezuser-state-)([0-9]{1,2})/.exec(baseClass)[1];
+
+			currentState		= (setOn) ? currentState | eventID : currentState & ~eventID;
+			baseClass		= (pos === -1) ? baseClass + ' ' : baseClass.substring(0, pos);
+			control.className	= baseClass + stateClass + String(currentState);
+			return true;
+		}
+
+		control.position = function(left, top) {
+			if (typeof top === 'undefined' || typeof left === 'undefined') {
+				var	dialogSize			= controlRect(),
+					windowSize			= windowRect(),
+					goldenSectionCenter	= 2 * windowSize.height / (3 + Math.sqrt(5)),
+					dialogCenter		= dialogSize.height / 2;
+
+				if (typeof top	=== 'undefined')	{top	= (goldenSectionCenter	> dialogCenter)		? (goldenSectionCenter		- dialogCenter)			+ 'px' : 0;}
+				if (typeof left	=== 'undefined')	{left	= (windowSize.width	> dialogSize.width)	? ((windowSize.width / 2)	- (dialogSize.width / 2))	+ 'px' : 0;}
+			}
+
+			control.style.position	= 'absolute';
+			control.style.left	= left;
+			control.style.top	= top;
+			return control;
+		}
+
+		control.create = function(tag) {
+			if (control === null || typeof control === 'undefined' || !control.id) {
+				control		= document.createElement(tag);
+				control.id	= id;
+
+				document.getElementsByTagName('body')[0].appendChild(control);
+				control = that.control(control);
+				control.hide();
+			}
+
+			return control;
+		}
+
+		return control;
+	};
+
+// ---------------------------------------------------------------------------
 	this.dragDrop = {
 		keyHTML:	'<a href="#" class="ezuser-keydragdrop" tabindex="3300">&#9000;</a>',
 		keySpeed:	10, // pixels per keypress event
@@ -4031,30 +4525,37 @@ function SHA256(s){
 		dYKeys:		undefined,
 		draggedObject:	undefined,
 
-		initElement: function (control) {
-			if (typeof control == 'string') {control = document.getElementById(control);}
+		initElement: function (div) {
+			if (typeof div === 'string') {div = that.control(div);}
 
-			control.onmousedown	= that.dragDrop.startDragMouse;
-			control.innerHTML	+= that.dragDrop.keyHTML;
+			div.onmousedown	= that.dragDrop.startDragMouse;
+			div.innerHTML	+= that.dragDrop.keyHTML;
 
-			var	links		= control.getElementsByTagName('a'),
+			var	links		= div.getElementsByTagName('a'),
 				lastLink	= links[links.length-1];
 
-			lastLink.relatedElement	= control;
+			lastLink.relatedElement	= div;
 			lastLink.onclick	= that.dragDrop.startDragKeys;
 		},
 
 		startDragMouse: function (e) {
-			that.dragDrop.startDrag(this);
+			var	thisEvent		= e || window.event,
+				clickTarget;
 
-			var	thisEvent		= e || window.event;
+			if (e.target)			{clickTarget = e.target;}
+			else				{clickTarget = e.srcElement;}
+			if (clickTarget.nodeType === 3)	{clickTarget = clickTarget.parentNode;}
+
+			if (clickTarget.nodeName.toLowerCase() === 'input') {return true;} // Don't drag if input control was clicked
+
+			that.dragDrop.startDrag(this);
 
 			that.dragDrop.initialMouseX	= thisEvent.clientX;
 			that.dragDrop.initialMouseY	= thisEvent.clientY;
 
-			that.event.add(document, 'mousemove', that.dragDrop.dragMouse);
-			that.event.add(document, 'mouseup', that.dragDrop.releaseElement);
-			return false;
+			that.control(document).event.add('mousemove', that.dragDrop.dragMouse);
+			that.control(document).event.add('mouseup', that.dragDrop.releaseElement);
+			return true;
 		},
 
 		startDragKeys: function () {
@@ -4062,21 +4563,21 @@ function SHA256(s){
 
 			that.dragDrop.dXKeys		= that.dragDrop.dYKeys = 0;
 
-			that.event.add(document, 'keydown', that.dragDrop.dragKeys);
-			that.event.add(document, 'keypress', that.dragDrop.switchKeyEvents);
+			that.control(document).event.add('keydown', that.dragDrop.dragKeys);
+			that.control(document).event.add('keypress', that.dragDrop.switchKeyEvents);
 
 			this.blur();
 			return false;
 		},
 
-		startDrag: function (control) {
+		startDrag: function (div) {
 			if (that.dragDrop.draggedObject) {that.dragDrop.releaseElement();}
 
-			that.dragDrop.startX		= control.offsetLeft;
-			that.dragDrop.startY		= control.offsetTop;
-			that.dragDrop.draggedObject	= control;
-			that.classNames.add(control, 'dragged');
-			control.style.cursor		= 'move';
+			that.dragDrop.startX		= div.offsetLeft;
+			that.dragDrop.startY		= div.offsetTop;
+			that.dragDrop.draggedObject	= div;
+			that.control(div).classNames.add('ezuser-dragged');
+			div.style.cursor		= 'move';
 		},
 
 		dragMouse: function (e) {
@@ -4109,8 +4610,8 @@ function SHA256(s){
 			case 63233:
 				that.dragDrop.dYKeys += that.dragDrop.keySpeed;
 				break;
-			case 13: 	// enter
-			case 27: 	// escape
+			case 13:	// enter
+			case 27:	// escape
 				that.dragDrop.releaseElement();
 				return false;
 			default:
@@ -4130,41 +4631,61 @@ function SHA256(s){
 
 		switchKeyEvents: function () {
 			// for Opera and Safari 1.3
-			that.event.remove(document, 'keydown',		that.dragDrop.dragKeys);
-			that.event.remove(document, 'keypress',		that.dragDrop.switchKeyEvents);
-			that.event.add(document, 'keypress',		that.dragDrop.dragKeys);
+			that.control(document).event.remove('keydown',	that.dragDrop.dragKeys);
+			that.control(document).event.remove('keypress',	that.dragDrop.switchKeyEvents);
+			that.control(document).event.add('keypress',		that.dragDrop.dragKeys);
 		},
 		releaseElement: function() {
-			that.event.remove(document, 'mousemove',	that.dragDrop.dragMouse);
-			that.event.remove(document, 'mouseup',		that.dragDrop.releaseElement);
-			that.event.remove(document, 'keypress',		that.dragDrop.dragKeys);
-			that.event.remove(document, 'keypress',		that.dragDrop.switchKeyEvents);
-			that.event.remove(document, 'keydown',		that.dragDrop.dragKeys);
+			that.control(document).event.remove('mousemove',	that.dragDrop.dragMouse);
+			that.control(document).event.remove('mouseup',	that.dragDrop.releaseElement);
+			that.control(document).event.remove('keypress',	that.dragDrop.dragKeys);
+			that.control(document).event.remove('keypress',	that.dragDrop.switchKeyEvents);
+			that.control(document).event.remove('keydown',	that.dragDrop.dragKeys);
 
-			that.classNames.remove(that.dragDrop.draggedObject, 'dragged');
+			that.control(that.dragDrop.draggedObject).classNames.remove('ezuser-dragged');
 			that.dragDrop.draggedObject.style.cursor	= 'auto';
 			that.dragDrop.draggedObject			= null;
 		}
-	}
+	};
+
 
 // ---------------------------------------------------------------------------
-	function setFocus(control) {
-		var doEvent;
-
-		if (control.disabled) {return;}
-
-		if (typeof document.activeElement.onBlur === 'function') {this.event.fire(document.activeElement, 'blur');}
-		if (typeof document.activeElement.onblur === 'function') {this.event.fire(document.activeElement, 'blur');}
-		if (typeof control.onFocus === 'function') {doEvent = this.event.fire(control, 'focus');}
-		if (typeof control.onfocus === 'function') {doEvent = this.event.fire(control, 'focus');}
-		if (doEvent !== false) {control.focus();}
-		control.select();
-	}
+// Public properties
+	this.passwordSaved		= '';
+	this.passwordDefault_SignIn	= false;
+	this.passwordDefault_Account	= false;
+	this.usernameDefault_Account	= false;
 
 // ---------------------------------------------------------------------------
-	function setInitialFocus(id) {
+	addStyleSheet = function () {
+		var	htmlHead	= document.getElementsByTagName('head')[0],
+			nodeList	= htmlHead.getElementsByTagName('link'),
+			elementCount	= nodeList.length,
+			found		= false,
+			i, node;
+
+		for (i = 0; i < elementCount; i++) {
+			if (nodeList[i].title === 'ezUser') {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			// Add style sheet
+			node		= document.createElement('link');
+			node.type	= 'text/css';
+			node.rel	= 'stylesheet';
+			node.href	= '$URL?$actionCSS';
+			node.title	= 'ezUser';
+			htmlHead.appendChild(node);
+		}
+	};
+
+// ---------------------------------------------------------------------------
+	setInitialFocus = function (id) {
 		// Set focus to the first text control
-		var textId = '', control = null;
+		var textId = '', textBox = null;
 
 		switch (id) {
 		case 'ezuser':
@@ -4175,100 +4696,242 @@ function SHA256(s){
 			break;
 		}
 
-		if (textId !== '') {control = that.getControl(textId);}
-		if (control === null || typeof control === 'undefined' || control.disabled === 'disabled') {return;}
-		setFocus(control);
+		if (textId !== '') {textBox = that.control(textId);}
+		if (textBox === null || typeof textBox === 'undefined' || textBox.disabled === 'disabled') {return;}
+		textBox.setFocus();
 	}
 
 // ---------------------------------------------------------------------------
-	function hideControl(id) {
-		var	control		= that.getControl(id),
-			className	= control.className + ' ezuser-hidden';
-
-		control.className	= className;
-		control.style.display	= 'none';	// belt and braces
-	}
-
-// ---------------------------------------------------------------------------
-	function showControl(id) {
-		var	control		= that.getControl(id),
-			classString	= control.className;
-
-		classString		= classString.replace(/ezuser-hidden/g, '');
-		classString		= classString.replace(/ {2}/g, ' ');
-		control.className	= classString;
-		control.style.display	= '';	// belt and braces
-	}
-
-// ---------------------------------------------------------------------------
-	// Public properties
-	this.passwordSaved		= '';
-	this.passwordDefault_SignIn	= false;
-	this.passwordDefault_Account	= false;
-	this.usernameDefault_Account	= false;
-
-	// Public methods
-// ---------------------------------------------------------------------------
-	this.showMessage = function (message, fail, messageType, instance) {
+	updateMessage = function (message, fail, messageType, instance) {
 		if (arguments.length < 1) {message	= '';}
 		if (arguments.length < 2) {fail		= false;}
 		if (arguments.length < 3) {messageType	= 'message';}
 		if (arguments.length < 4) {instance	= 'ezuser';}
 
 		var	id		= instance + '-' + messageType,
-			div		= this.getControl(id),
-			classString	= 'ezuser-' + messageType + ' ezuser-$stringRight',
-			subClass	= (fail) ? 'fail' : 'info',
+			div		= that.control(id),
+			messageStyle	= (fail) ? 'fail' : 'info',
+			classString	= 'ezuser-' + messageType + ' ezuser-$stringRight ezuser-message-' + messageStyle,
 			p;
 
-		if (div === null)		{return;} // No such control
+		if (!div.id)			{return;} // No such control under our management
 		if (div.hasChildNodes())	{div.removeChild(div.firstChild);}
 
-		if (message !== '') {
+		if (message === '') {
+			div.hide();
+		} else {
 			p		= document.createElement('p');
-			p.className	= 'ezuser-message-' + subClass;
+			p.className	= 'ezuser';
 			p.innerHTML	= message;
 			div.className	= classString;
 
 			div.appendChild(p);
+			div.show();
 		}
 
-		div = this.getControl('ezuser-$tagVerbose');
-		if (div !== null) {div.parentNode.removeChild(div);}
+		div = that.control('ezuser-$tagVerbose');
+		if (div.parentNode) {div.parentNode.removeChild(div);}
 	};
 
 // ---------------------------------------------------------------------------
-	this.bodyAppend = function (html) {
-		document.getElementsByTagName('body')[0].innerHTML += html;
+	fillContainerText = function (id, html, className) {
+		var container, containerList, formList, formId;
+
+		container = that.control(id).create('div');
+		container.classNames.add(id);
+		container.classNames.add(className);
+		container.fill(html);
+
+		if (typeof className === 'string' && className.indexOf('ezuser-$containerStyleDialog') !== -1) {
+			// It's a dialog
+			container.position();
+			that.dragDrop.initElement(container);
+//?			that.control(window).event.add('resize', that.control(id).position);
+		}
+
+		formList	= container.forms();
+		formId		= ((typeof formList === 'undefined') || (formList.length === 0)) ? '' : formList[0].getAttribute('id');
+
+		switch (formId) {
+		case '$controlPanelForm-form':
+			// If it's the control panel, hide all the floating dialogs
+			that.control('$signInForm').hide();
+			that.control('$resetForm').hide();
+			that.control('$accountForm').hide();
+
+			break;
+		case '$signInForm-form':
+			that.control('$accountForm').hide();
+			that.control('$resetForm').hide();
+			cookies.showPreferences();
+
+			if (cookies.rememberMe) {
+				this.passwordDefault_SignIn = true;
+				that.control('ezuser-$tagUsername').value	= cookies.username;
+				that.control('ezuser-$tagPassword').value	= '$passwordMask';
+			}
+
+			break;
+		case '$accountForm-form':
+			that.control('$resetForm').hide();
+			that.control('$signInForm').hide();
+			wizard.initialize(); // Set wizard to page 1
+			that.usernameDefault_Account = (that.control('$accountForm-$tagUsername').value === '');
+			that.passwordDefault_Account = (that.control('$accountForm-$tagNewUser').value !== '$stringTrue');
+
+			if (that.control('$accountForm-$tagUseSavedPassword').value === '$stringTrue') {
+				that.control('$accountForm-$tagPassword').value	= that.passwordSaved;
+				that.control('$accountForm-$tagConfirm').value	= that.passwordSaved;
+			} else {
+				that.passwordSaved = '';
+			}
+
+			break;
+		case '$resetForm-form':
+			that.control('$signInForm').hide();
+			that.control('$accountForm').hide();
+		}
+
+		that.control(container).show();
+		setInitialFocus(id);
 	};
 
-/**
- * Responds to various UI events and controls the appearance of the form's
- * buttons
- */
-	this.setButtonState = function (control, eventID, setOn) {
-		// eventID	1 = mouseover/mouseout
-		//		2 = focus/blur
-		//		4 = selected/unselected
+// ---------------------------------------------------------------------------
+	fillContainersXML = function (xml) {
+		var nodeList, nodeCount, i, node, parent, id, className, html;
 
-		if (control === null) {return false;}
+		nodeList	= xml.childNodes;
+		nodeCount	= nodeList.length;
 
-		var	baseClass	= control.className,
-			stateClass	= 'ezuser-buttonstate-',
-			pos		= baseClass.indexOf(stateClass),
-			currentState	= Number(control.state);
+		for (i = 0; i < nodeCount; i++) {
+			node = nodeList[i];
 
-		currentState		= (setOn) ? currentState | eventID : currentState & ~eventID;
-		control.state		= String(currentState);
-		baseClass		= (pos === -1) ? baseClass + ' ' : baseClass.substring(0, pos);
-		control.className	= baseClass + stateClass + String(currentState);
-		return true;
+			switch (node.nodeType) {
+			case 1: // Node.ELEMENT_NODE: // recurse
+				fillContainersXML(node);
+				break;
+			case 4: // Node.CDATA_SECTION_NODE: // fill the container
+				parent		= node.parentNode;
+				id		= parent.getAttribute('id');
+				className	= parent.getAttribute('class');
+				html		= node.nodeValue;
+
+				fillContainerText(id, html, className);
+				break;
+			case 3: // Node.TEXT_NODE:
+			case 7: // Node.PROCESSING_INSTRUCTION_NODE: // Usually caused by PHP passing an error message along with the XHR content
+			case 8: // Node.COMMENT_NODE
+				break; // Ignore
+			default:
+				window.alert('I wasn\\'t expecting a node type of ' + node.nodeType);
+				break;
+			}
+		}
+	};
+
+// ---------------------------------------------------------------------------
+	removeIllegalCharacters = function (restrictedString) {
+		var	regexString	= '[^0-9A-Za-z_-]',
+			regex		= new RegExp(regexString, 'g');
+
+		return restrictedString.replace(regex, '');
+	};
+
+// ---------------------------------------------------------------------------
+	normalizeUsername = function (username) {
+		username		= removeIllegalCharacters(username);
+
+		var textBox		= that.control('$accountForm-$tagUsername');
+		textBox.defaultValue	= username;
+		textBox.value		= username;
+	};
+
+// ---------------------------------------------------------------------------
+	localValidation = function (formId) {
+		var	textBox,
+			textEmail,
+			textUsername,
+			textPassword,
+			textConfirm,
+			textNew,
+			instance,
+			message		= '';
+
+		switch (formId) {
+		case '$accountForm-form':
+			textEmail	= that.control('$accountForm-$tagEmail');
+			textUsername	= that.control('$accountForm-$tagUsername');
+			textPassword	= that.control('$accountForm-$tagPassword');
+			textConfirm	= that.control('$accountForm-$tagConfirm');
+			textNew		= that.control('$accountForm-$tagNewUser');
+			instance	= '$accountForm';
+
+			// Hide the loquacious container
+			updateMessage('', false, '$messageTypeDialog', instance);
+
+			// Valid email address
+			if (textEmail.value === '') {
+				message = 'You must provide an email address';
+				textBox	= textEmail;
+			} else {
+				// Valid username
+				normalizeUsername(textUsername.value);
+
+				if (textUsername.value === '') {
+					message = 'The username cannot be blank';
+					textBox	= textUsername;
+				} else {
+					// Password OK?
+					if (textPassword.value !== textConfirm.value) {
+						message = 'Passwords are not the same';
+					} else if (that.passwordDefault_Account) {
+						if (textNew.value === '$stringTrue') {message = 'Password cannot be blank';}
+					} else if (textPassword.value === '') {
+						message = 'Password cannot be blank';
+					}
+
+					textBox	= textPassword;
+				}
+			}
+
+			break;
+		case 'ezuser-$actionReset-form':
+			textPassword	= that.control('ezuser-$actionReset-$tagPassword');
+			textConfirm	= that.control('ezuser-$actionReset-$tagConfirm');
+			instance	= 'ezuser';
+			textBox		= textPassword;
+
+			// Password OK?
+			if (textPassword.value !== textConfirm.value) {
+				message = 'Passwords are not the same';
+			} else if (textPassword.value === '') {
+				message = 'Password cannot be blank';
+			}
+
+			break;
+		case 'ezuser-$actionResetRequest-form':
+			textUsername	= that.control('ezuser-$tagUsername');
+			instance	= 'ezuser';
+			textBox		= textUsername;
+
+			// Username entered?
+			if (textUsername.value === '') {message = 'Username cannot be blank';}
+			break;
+		}
+
+		if (message === '') {
+			return true;
+		} else {
+			updateMessage(message, true, '$messageTypeDefault', instance);
+			textBox.setFocus();
+			return false;
+		}
 	};
 
 /**
  * Cookies! Mmmm.
  */
-	this.cookies	= {
+	cookies	= {
 		sessionId:	'',
 		username:	'',
 		passwordHash:	'',
@@ -4327,13 +4990,13 @@ function SHA256(s){
 		},
 
 		update: function () {
-			this.username = that.getValue('ezuser-$tagUsername');
+			this.username = that.control('ezuser-$tagUsername').value;
 
 //			if (typeof ajaxUnit === 'function') {ajaxUnit('passwordDefault_SignIn = ' + that.passwordDefault_SignIn,	true);}	// Debug
 //			if (typeof ajaxUnit === 'function') {ajaxUnit('this.passwordHash = ' + this.passwordHash,			true);}	// Debug
 
 			if (!that.passwordDefault_SignIn || (this.passwordHash === '')) {
-				var password		= that.getValue('ezuser-$tagPassword');
+				var password		= that.control('ezuser-$tagPassword').value;
 				this.passwordHash	= SHA256('$remoteAddress' + SHA256(password));
 			}
 
@@ -4358,8 +5021,8 @@ function SHA256(s){
 		},
 
 		showPreferences: function () {
-			that.setButtonState(that.getControl('ezuser-$tagRememberMe'),		4, this.rememberMe);
-			that.setButtonState(that.getControl('ezuser-$tagStaySignedIn'),	4, this.staySignedIn);
+			that.control('ezuser-$tagRememberMe').setState(4, this.rememberMe);
+			that.control('ezuser-$tagStaySignedIn').setState(4, this.staySignedIn);
 		},
 
 		toggleRememberMe: function() {
@@ -4382,35 +5045,22 @@ function SHA256(s){
 /**
  * AJAX handling
  */
-	this.ajax = {
+	ajax = {
 		xhr: new window.XMLHttpRequest(),
 
 		handleServerResponse: function () {
-			var id, fail, message, cancelButton;
+			var id, className, cancelButton;
 
 			if ((this.readyState === 4) && (this.status === 200)) {
-				if (isNaN(this.responseText)) {
-					id = this.getResponseHeader('ezUser-container');
+				id		= this.getResponseHeader('ezUser-id');
+				className	= this.getResponseHeader('ezUser-class');
 
-					if (this.responseXML !== null) {
-						that.fillContainersXML(this.responseXML);
-					} else if (id === null) {
-						that.bodyAppend(this.responseText);
-					} else {
-						that.fillContainerText(id, this.responseText);
-					}
+				if (this.responseXML !== null) {
+					fillContainersXML(this.responseXML);
+				} else if (id === null) {
+					that.control('body').append(this.responseText);
 				} else {
-					fail		= true;
-					message		= 'Server error, please try later';
-					cancelButton	= that.getControl('ezuser-$actionCancel');
-
-					that.showMessage(message, fail);
-
-					if (cancelButton !== null) {
-						cancelButton.id		= 'ezuser-$actionSignIn';
-						cancelButton.value	= 'Sign in';
-						cancelButton.setAttribute('data-ezuser-action', '$actionSignIn');
-					}
+					fillContainerText(id, this.responseText, className);
 				}
 
 				if (typeof ajaxUnit === 'function') {ajaxUnit(this);}	// Automated unit testing
@@ -4433,7 +5083,6 @@ function SHA256(s){
 				requestData	= '',
 				URL		= '$URL',
 				delimPos	= thisAction.indexOf('$delimPlus'),
-				control,
 				textNew,
 				readyState;
 
@@ -4443,35 +5092,33 @@ function SHA256(s){
 
 			switch (action) {
 			case '$actionSignIn':
-				control		= that.getControl('ezuser-$actionSignIn');
-				control.id	= 'ezuser-$actionCancel';
-				control.value	= 'Cancel';
-				control.setAttribute('data-ezuser-action', '$actionCancel');
+				updateMessage('Signing in - please wait', false, '$messageTypeDefault', '$signInForm');
+				cookies.update();	// Updates ezuser.passwordHash;
+				passwordHash	= SHA256(cookies.sessionId + cookies.passwordHash);
 
-				that.showMessage('Signing in - please wait');
-				that.cookies.update();	// Updates ezuser.passwordHash;
-
-				passwordHash	= SHA256(that.cookies.sessionId + that.cookies.passwordHash);
-//				if (typeof ajaxUnit === 'function') {ajaxUnit('sessionId = ' + that.cookies.sessionId,		true);}	// Debug
+//				if (typeof ajaxUnit === 'function') {ajaxUnit('sessionId = ' + cookies.sessionId,		true);}	// Debug
 //				if (typeof ajaxUnit === 'function') {ajaxUnit('passwordHash = ' + passwordHash,			true);}	// Debug
+
 				requestData	= '$action='			+ action;
-				requestData	+= '&$cookieUsername='		+ that.getValue('ezuser-$tagUsername');
+				requestData	+= '&$cookieUsername='		+ that.control('ezuser-$tagUsername').value;
 				requestData	+= '&$cookiePassword='		+ passwordHash;
 				requestType	= 'POST';
 
 				break;
 			case '$actionValidate':
-				textNew		= that.getValue('$accountForm-$tagNewUser');
+				updateMessage('Registering - please wait', false, '$messageTypeDefault', '$accountForm');
+
+				textNew		= that.control('$accountForm-$tagNewUser').value;
 				requestData	= '$action='			+ action;
 				requestData	+= '&$tagNewUser='		+ textNew;
-				requestData	+= '&$tagWizard='		+ encodeURIComponent(that.getValue('$accountForm-$tagWizard'));
-				requestData	+= '&$tagEmail='		+ encodeURIComponent(that.getValue('$accountForm-$tagEmail'));
-				requestData	+= '&$tagFirstName='		+ encodeURIComponent(that.getValue('$accountForm-$tagFirstName'));
-				requestData	+= '&$tagLastName='		+ encodeURIComponent(that.getValue('$accountForm-$tagLastName'));
-				requestData	+= '&$cookieUsername='		+ that.getValue('$accountForm-$tagUsername');
+				requestData	+= '&$tagWizard='		+ encodeURIComponent(that.control('$accountForm-$tagWizard').value);
+				requestData	+= '&$tagEmail='		+ encodeURIComponent(that.control('$accountForm-$tagEmail').value);
+				requestData	+= '&$tagFirstName='		+ encodeURIComponent(that.control('$accountForm-$tagFirstName').value);
+				requestData	+= '&$tagLastName='		+ encodeURIComponent(that.control('$accountForm-$tagLastName').value);
+				requestData	+= '&$cookieUsername='		+ that.control('$accountForm-$tagUsername').value;
 
 				if (!that.passwordDefault_Account || (textNew === '$stringTrue')) {
-					passwordHash	= SHA256(that.getValue('$accountForm-$tagPassword'));
+					passwordHash	= SHA256(that.control('$accountForm-$tagPassword').value);
 					requestData	+= '&$cookiePassword='	+ passwordHash;
 				}
 
@@ -4489,14 +5136,14 @@ function SHA256(s){
 
 				return;
 			case '$actionResend':
-				URL += '?' + thisAction + equals + encodeURIComponent(that.getValue('$accountForm-$tagEmail'));
+				URL += '?' + thisAction + equals + encodeURIComponent(that.control('$accountForm-$tagEmail').value);
 				break;
 			case '$actionResetPassword':		// Fall-through ->
 			case '$actionResetRequest':
-				URL += '?' + thisAction + equals + that.getValue('ezuser-$tagUsername');
+				URL += '?' + thisAction + equals + that.control('ezuser-$tagUsername').value;
 				break;
 			case '$actionReset':
-				passwordHash = SHA256(that.getValue('ezuser-$actionReset-$tagPassword'));
+				passwordHash = SHA256(that.control('ezuser-$actionReset-$tagPassword').value);
 				URL = window.location.href + '&$cookiePassword=' + passwordHash;
 				break;
 			default:
@@ -4511,37 +5158,37 @@ function SHA256(s){
 /**
  * Account wizard page handling
  */
-	this.wizard = {
+	wizard = {
 		page: 1,
 
 		changePage: function (delta) {
 			var nextPageId, nextPage;
 
-			if (that.getValue('$accountForm-$tagWizard') === '$stringFalse') {return;}	// Not in wizard mode
+			if (that.control('$accountForm-$tagWizard').value === '$stringFalse') {return;}	// Not in wizard mode
 
 			this.page = (arguments.length === 0) ? 1 : this.page + delta;
 			if (this.page < 1) {this.page = 1;}
 
 			// Previous page
 			if (this.page === 1) {
-				hideControl('$accountForm-back');				// Hide 'Back' button
+				that.control('$accountForm-back').hide();				// Hide 'Back' button
 			} else {
-				showControl('$accountForm-back');				// Show 'Back' button
-				hideControl('$accountForm-fieldset-' + (this.page - 1));	// Hide previous page
+				that.control('$accountForm-back').show();				// Show 'Back' button
+				that.control('$accountForm-fieldset-' + (this.page - 1)).hide();	// Hide previous page
 			}
 
 			// Current page
-			showControl('$accountForm-fieldset-' + this.page);			// Show this page
+			that.control('$accountForm-fieldset-' + this.page).show();			// Show this page
 
 			// Next page
 			nextPageId	= '$accountForm-fieldset-' + (this.page + 1);
-			nextPage	= this.getControl(nextPageId);
+			nextPage	= that.control(nextPageId);
 
 			if (nextPage === null) {
-				hideControl('$accountForm-next');				// Hide 'Next' button
+				that.control('$accountForm-next').hide();				// Hide 'Next' button
 			} else {
-				showControl('$accountForm-next');				// Show 'Next' button
-				hideControl(nextPageId);					// Hide next page
+				that.control('$accountForm-next').show();				// Show 'Next' button
+				that.control(nextPageId).hide();					// Hide next page
 			}
 		},
 
@@ -4550,49 +5197,53 @@ function SHA256(s){
 		initialize:	function () {this.page = 1;}
 	};
 
-/**
- * Responds to clicks on the ezUser form
- */
-	this.click = function (control) {
-		var	id	= control.id,
-			action	= control.getAttribute('data-ezuser-action');
+
+// More public methods
+// ---------------------------------------------------------------------------
+	this.action = function (thisAction) {
+		ajax.execute(thisAction);
+	}
+
+// ---------------------------------------------------------------------------
+	this.click = function (button) {
+		var	id	= button.id,
+			action	= button.getAttribute('data-ezuser-action');
 
 		switch (id) {
 		case 'ezuser-$actionAccountForm':
 			$accountClick;
 			break;
 		case 'ezuser-$tagRememberMe':
-			this.cookies.toggleRememberMe();
+			cookies.toggleRememberMe();
 			break;
 		case 'ezuser-$tagStaySignedIn':
-			this.cookies.toggleStaySignedIn();
+			cookies.toggleStaySignedIn();
 			break;
 		case '$accountForm-next':
-			this.wizard.pageNext();	// Next wizard page
+			wizard.pageNext();	// Next wizard page
 			break;
 		case '$accountForm-back':
-			this.wizard.pageBack();	// Previous wizard page
-			break;
-		case 'ezuser-$tagVerbose':
-			this.ajax.execute('$actionResultForm=' + control.value);
+			wizard.pageBack();	// Previous wizard page
 			break;
 		case 'ezuser-$actionResetPassword':	// Fall-through ->
 		case 'ezuser-$actionReset-OK':		// Fall-through ->
 		case '$accountForm-$actionValidate':
-			if (this.localValidation(control.form.id)) {this.ajax.execute(action);}
+			if (localValidation(button.form.id)) {ajax.execute(action);}
+			break;
+		case '$signInForm-close':		// Fall-through ->
+		case '$accountForm-close':
+			that.control(button.parentNode.id).hide();
 			break;
 		default:
 			if (action === null) {break;}
-			this.ajax.execute(action);
+			ajax.execute(action);
 			break;
 		}
 
 		return false;
 	};
 
-/**
- * Responds to keypresses on the ezUser form
- */
+// ---------------------------------------------------------------------------
 	this.keyPress = function (e) {
 		if (!e) {e = window.event;}
 
@@ -4603,11 +5254,11 @@ function SHA256(s){
 		formId	= target.form.id;
 		id	= target.id;
 
-		if (formId === '$accountForm-form' && id === '$accountForm-$tagUsername') {
+		if (formId === '$accountForm-form' && id === '$accountForm-$tagUsername' && (e.keyCode >= 32)) {
 			// If we are messing with the username then forget creating a default
 			this.usernameDefault_Account = false;
 
-			if ('' === this.removeIllegalCharacters(String.fromCharCode(e.charCode))) {
+			if ('' === removeIllegalCharacters(String.fromCharCode(e.charCode))) {
 				status = false; // cancel the event (i.e. don't allow the character)
 			}
 		}
@@ -4615,9 +5266,10 @@ function SHA256(s){
 		return status;
 	};
 
+// ---------------------------------------------------------------------------
 	this.keyUp = function (e) {
 		if (!e) {e = window.event;}
-		var formId, id, control, target;
+		var formId, id, button, target;
 
 		// Process Carriage Return and tidy up form
 		target	= (e.target) ? e.target : e.srcElement;
@@ -4628,14 +5280,14 @@ function SHA256(s){
 		case 'ezuser-$actionSignIn-form':
 			if (id === 'ezuser-$tagPassword' && this.passwordDefault_SignIn) {
 				// Forget password from cookie
-				this.cookies.passwordHash	= '';
+				cookies.passwordHash	= '';
 				this.passwordDefault_SignIn	= false;
 			}
 
 			if (e.keyCode === 13) {
-				this.click(this.getControl('ezuser-$actionSignIn'));
+				this.click(that.control('ezuser-$actionSignIn-button'));
 			} else {
-				this.showMessage(); // Hide message
+				updateMessage('', false, '$messageTypeDefault', '$signInForm'); // Hide message
 			}
 
 			break;
@@ -4643,32 +5295,32 @@ function SHA256(s){
 			switch (id) {
 			case '$accountForm-$tagFirstName':
 			case '$accountForm-$tagLastName':
-				if (this.getValue('$accountForm-$tagUsername') === '') {this.usernameDefault_Account = true;}
-				if (this.usernameDefault_Account) {this.normalizeUsername(this.getValue('$accountForm-$tagFirstName') + this.getValue('$accountForm-$tagLastName'));}
+				if (that.control('$accountForm-$tagUsername').value === '') {this.usernameDefault_Account = true;}
+				if (this.usernameDefault_Account) {normalizeUsername(that.control('$accountForm-$tagFirstName').value + that.control('$accountForm-$tagLastName').value);}
 				break;
 			case '$accountForm-$tagPassword':
-				this.passwordSaved = target.value;
-				this.passwordDefault_Account = false;
+				that.passwordSaved = target.value;
+				that.passwordDefault_Account = false;
 				break;
 			case '$accountForm-$tagConfirm':
-				this.passwordDefault_Account = false;
+				that.passwordDefault_Account = false;
 				break;
 			}
 
 			if (e.keyCode === 13) {
-				control = this.getControl('$accountForm-$actionValidate');
-				if (control === null) {control = this.getControl('$accountForm-$modeEdit');}
-				this.click(control);
+				button = that.control('$accountForm-$actionValidate');
+				if (button === null) {button = that.control('$accountForm-$modeEdit');}
+				that.click(button);
 			} else {
-				this.showMessage('', false, '$messageTypeText', '$accountForm'); // Hide message
+				updateMessage('', false, '$messageTypeDefault', '$accountForm'); // Hide message
 			}
 
 			break;
 		case 'ezuser-$actionReset-form':
 			if (e.keyCode === 13) {
-				this.click(this.getControl('ezuser-$actionReset-OK'));
+				that.click(that.control('ezuser-$actionReset-OK'));
 			} else {
-				this.showMessage('', false, '$messageTypeText'); // Hide message
+				updateMessage('', false, '$messageTypeDefault', '$signInForm'); // Hide message
 			}
 
 			break;
@@ -4677,274 +5329,17 @@ function SHA256(s){
 		return true;
 	};
 
-/**
- * Manages the ezUser forms as dialog boxes
- */
-	 this.dialog = function(id) {
-		this.control = document.getElementById(id);
-
-		this.windowRect = function() {
-			var	width	= 0,
-				height	= 0;
-
-			if (typeof window.innerWidth === 'number') {
-				width	= window.innerWidth;
-				height	= window.innerHeight;
-			} else if (document.documentElement && document.documentElement.clientWidth) {
-				width	= document.documentElement.clientWidth;
-				height	= document.documentElement.clientHeight;
-			} else if (document.body && document.body.clientWidth) {
-				width	= document.body.clientWidth;
-				height	= document.body.clientHeight;
-			}
-
-			return {width: width, height: height};
-		};
-
-		this.rect = function() {
-			return {width: this.control.offsetWidth, height: this.control.offsetHeight};
-		};
-
-		this.position = function() {
-			var	dialogRect		= this.rect(),
-				windowRect		= this.windowRect(),
-				goldenSectionCenter	= 2 * windowRect.height / (3 + Math.sqrt(5)),
-				dialogCenter		= dialogRect.height / 2,
-				top			= (goldenSectionCenter	> dialogCenter)		? (goldenSectionCenter		- dialogCenter)			+ 'px' : 0,
-				left			= (windowRect.width	> dialogRect.width)	? ((windowRect.width / 2)	- (dialogRect.width / 2))	+ 'px' : 0;
-
-				this.control.style.position	= 'absolute';
-				this.control.style.left		= left;
-				this.control.style.top		= top;
-		};
-
-		return this;
-	};
 
 // ---------------------------------------------------------------------------
-	this.fillContainerText = function (id, html) {
-		var	container	= this.getControl(id),
-			containerList,
-			formList,
-			formId;
-
-		if (container === null || typeof container === 'undefined') {
-			containerList = document.getElementsByTagName(id);
-
-			if (containerList === null || typeof containerList === 'undefined' || containerList.length === 0) {
-//-				window.alert('Can\\'t find a container \\'' + id + '\\' for this content: ' + html.substring(0, 256));
-//-				return;
-//- Fuck it, just append a container
-				container		= document.createElement('div');
-				container.id		= id;
-				container.className	= 'ezuser-float'; // Assume it's a floater
-
-				document.getElementsByTagName('body')[0].appendChild(container);
-			} else {
-				container = containerList[0];
-			}
-		}
-
-		that.classNames.add(container, id);
-
-		container.innerHTML	= html;
-		formList		= container.getElementsByTagName('form');
-		formId			= ((typeof formList === 'undefined') || (formList.length === 0)) ? '' : formList[0].getAttribute('id');
-
-		switch (formId) {
+	this.passwordFocus = function (textBox) {
+		switch (textBox.form.id) {
 		case 'ezuser-$actionSignIn-form':
-			this.dialog(id).position();
-			this.dragDrop.initElement(id);
-			this.cookies.showPreferences();
-
-			if (this.cookies.rememberMe) {
-				this.passwordDefault_SignIn = true;
-				this.setValue('ezuser-$tagUsername', this.cookies.username);
-				this.setValue('ezuser-$tagPassword', '$passwordMask');
-			}
-
+			if (this.passwordDefault_SignIn) {textBox.value = '';}
 			break;
 		case '$accountForm-form':
-			this.dialog(id).position();
-			this.dragDrop.initElement(id);
-			this.wizard.initialize(); // Set wizard to page 1
-			this.usernameDefault_Account = (this.getValue('$accountForm-$tagUsername') === '');
-			this.passwordDefault_Account = (this.getValue('$accountForm-$tagNewUser') !== '$stringTrue');
-
-			if (this.getValue('$accountForm-$tagUseSavedPassword') === '$stringTrue') {
-				this.setValue('$accountForm-$tagPassword', this.passwordSaved);
-				this.setValue('$accountForm-$tagConfirm', this.passwordSaved);
-			} else {
-				this.savedPassword = '';
-			}
-
-			break;
-		}
-
-		setInitialFocus(id);
-	};
-
-// ---------------------------------------------------------------------------
-	this.fillContainersXML = function (xml) {
-		var i, iHalt, id, html, formNode, formList;
-
-		formList	= xml.childNodes;
-		iHalt		= formList.length;
-
-		for (i = 0; i < iHalt; i++) {
-			formNode = formList[i];
-
-			switch (formNode.nodeType) {
-			case 1: // Node.ELEMENT_NODE: // recurse
-				this.fillContainersXML(formNode);
-				break;
-			case 4: // Node.CDATA_SECTION_NODE: // fill the container
-				id	= formNode.parentNode.getAttribute('container');
-				html	= formNode.nodeValue;
-
-				this.fillContainerText(id, html);
-				break;
-			case 3: // Node.TEXT_NODE:
-			case 7: // Node.PROCESSING_INSTRUCTION_NODE: // Usually caused by PHP passing an error message along with the XHR content
-			case 8: // Node.COMMENT_NODE
-				break; // Ignore
-			default:
-				window.alert('I wasn\\'t expecting a node type of ' + formNode.nodeType);
-				break;
-			}
-		}
-	};
-
-// ---------------------------------------------------------------------------
-	this.localValidation = function (formId) {
-		var	control,
-			textEmail,
-			textUsername,
-			textPassword,
-			textConfirm,
-			textNew,
-			instance,
-			message		= '';
-
-		switch (formId) {
-		case '$accountForm-form':
-			textEmail	= this.getControl('$accountForm-$tagEmail');
-			textUsername	= this.getControl('$accountForm-$tagUsername');
-			textPassword	= this.getControl('$accountForm-$tagPassword');
-			textConfirm	= this.getControl('$accountForm-$tagConfirm');
-			textNew		= this.getControl('$accountForm-$tagNewUser');
-			instance	= '$accountForm';
-
-			// Valid email address
-			if (textEmail.value === '') {
-				message = 'You must provide an email address';
-				control	= textEmail;
-			} else {
-				// Valid username
-				this.normalizeUsername(textUsername.value);
-
-				if (textUsername.value === '') {
-					message = 'The username cannot be blank';
-					control	= textUsername;
-				} else {
-					// Password OK?
-					if (textPassword.value !== textConfirm.value) {
-						message = 'Passwords are not the same';
-					} else if (this.passwordDefault_Account) {
-						if (textNew.value === '$stringTrue') {message = 'Password cannot be blank';}
-					} else if (textPassword.value === '') {
-						message = 'Password cannot be blank';
-					}
-
-					control	= textPassword;
-				}
-			}
-
-			break;
-		case 'ezuser-$actionReset-form':
-			textPassword	= this.getControl('ezuser-$actionReset-$tagPassword');
-			textConfirm	= this.getControl('ezuser-$actionReset-$tagConfirm');
-			instance	= 'ezuser';
-			control		= textPassword;
-
-			// Password OK?
-			if (textPassword.value !== textConfirm.value) {
-				message = 'Passwords are not the same';
-			} else if (textPassword.value === '') {
-				message = 'Password cannot be blank';
-			}
-
-			break;
-		case 'ezuser-$actionResetRequest-form':
-			textUsername	= this.getControl('ezuser-$tagUsername');
-			instance	= 'ezuser';
-			control		= textUsername;
-
-			// Username entered?
-			if (textUsername.value === '') {message = 'Username cannot be blank';}
-			break;
-		}
-
-		if (message === '') {
-			return true;
-		} else {
-			this.showMessage(message, true, '$messageTypeText', instance);
-			setFocus(control);
-			return false;
-		}
-	};
-
-// ---------------------------------------------------------------------------
-	this.removeIllegalCharacters = function (restrictedString) {
-		var	regexString	= '[^0-9A-Za-z_-]',
-			regex		= new RegExp(regexString, 'g');
-
-		return restrictedString.replace(regex, '');
-	}
-
-	this.normalizeUsername = function (username) {
-		username		= this.removeIllegalCharacters(username);
-
-		var control		= this.getControl('$accountForm-$tagUsername');
-		control.defaultValue	= username;
-		control.value		= username;
-	};
-
-// ---------------------------------------------------------------------------
-	this.addStyleSheet = function () {
-		var	htmlHead	= document.getElementsByTagName('head')[0],
-			nodeList	= htmlHead.getElementsByTagName('link'),
-			elementCount	= nodeList.length,
-			found		= false,
-			i, node;
-
-		for (i = 0; i < elementCount; i++) {
-			if (nodeList[i].title === 'ezUser') {
-				found = true;
-				break;
-			}
-		}
-
-		if (!found) {
-			// Add style sheet
-			node		= document.createElement('link');
-			node.type	= 'text/css';
-			node.rel	= 'stylesheet';
-			node.href	= '$URL?$actionCSS';
-			node.title	= 'ezUser';
-			htmlHead.appendChild(node);
-		}
-	};
-
-	this.passwordFocus = function (control) {
-		switch (control.form.id) {
-		case 'ezuser-$actionSignIn-form':
-			if (this.passwordDefault_SignIn) {control.value = '';}
-			break;
-		case '$accountForm-form':
-			if (this.passwordDefault_Account) {
-				this.setValue('$accountForm-$tagPassword', '');
-				this.setValue('$accountForm-$tagConfirm', '');
+			if (that.passwordDefault_Account) {
+				that.control('$accountForm-$tagPassword').value	= '';
+				that.control('$accountForm-$tagConfirm').value	= '';
 			}
 			break;
 		}
@@ -4952,15 +5347,16 @@ function SHA256(s){
 		return true;
 	};
 
-	this.passwordBlur = function (control) {
-		switch (control.form.id) {
+// ---------------------------------------------------------------------------
+	this.passwordBlur = function (textBox) {
+		switch (textBox.form.id) {
 		case 'ezuser-$actionSignIn-form':
-			if (this.passwordDefault_SignIn) {control.value = '$passwordMask';}
+			if (this.passwordDefault_SignIn) {textBox.value = '$passwordMask';}
 			break;
 		case '$accountForm-form':
-			if (this.passwordDefault_Account) {
-				this.setValue('$accountForm-$tagPassword', '$passwordMask');
-				this.setValue('$accountForm-$tagConfirm', '$passwordMask');
+			if (that.passwordDefault_Account) {
+				that.control('$accountForm-$tagPassword').value	= '$passwordMask';
+				that.control('$accountForm-$tagConfirm').value	= '$passwordMask';
 			}
 			break;
 		}
@@ -4971,8 +5367,8 @@ function SHA256(s){
 /**
  * Constructor
  */
-	this.cookies.read();
-	this.addStyleSheet();
+	cookies.read();
+	addStyleSheet();
 }
 
 /**
@@ -5005,9 +5401,9 @@ GENERATED;
 // Account verification
 // ---------------------------------------------------------------------------
 	private static /*.string.*/ function verify_renotify($username_or_email = '', $sendToBrowser = false) {
-		$success	= self::verify_notify($username_or_email);
-		$message	= ($success) ? 'Verification email has been resent.' : 'Verification email was not sent: please try again later';
-		$container	= self::getInstanceId(self::ACTION_ACCOUNT . '-' . self::MESSAGE_TYPE_TEXT);
+		$result		= self::verify_notify($username_or_email);
+		$message	= ($result === self::RESULT_SUCCESS) ? 'Verification email has been resent.' : self::resultText($result);
+		$container	= self::getInstanceId(self::ACTION_ACCOUNT . '-' . self::MESSAGE_TYPE_DEFAULT);
 
 		if ($sendToBrowser) {self::sendContent($message, $container); return '';} else return $message;
 	}
@@ -5122,31 +5518,32 @@ HTML;
 // ---------------------------------------------------------------------------
 // General action handling
 // ---------------------------------------------------------------------------
-	private static /*.string.*/ function doAction($action = '', $id = '', $sendToBrowser = true) {
-		$html = '';
+	private static /*.array[int]string.*/ function doAction($action = '', $id = '', $sendToBrowser = true) {
+		$html = array('', '', '');
 
 		switch ($action) {
-		case self::ACTION_CONTROLPANEL:		$html = self::htmlControlPanel		($sendToBrowser);				break;
-		case self::ACTION_STYLESHEET:		$html = self::htmlStyleSheet		($sendToBrowser);				break;
-		case self::ACTION_BODY:			$html = self::htmlSecureContent		($sendToBrowser);				break;
-		case self::ACTION_ABOUT:		$html = self::htmlAbout			($sendToBrowser);				break;
-		case self::ACTION_ABOUTTEXT:		$html = self::htmlAboutText		($sendToBrowser);				break;
-		case self::ACTION_SOURCECODE:		$html = self::htmlSourceCode		($sendToBrowser);				break;
-		case self::ACTION_CONTAINER:		$html = self::htmlContainer		($id,			$sendToBrowser);	break;
-		case self::ACTION_BITMAP:		$html = self::inlineBitmap		($id,			$sendToBrowser);	break;
-		case self::ACTION_RESETREQUEST:		$html = self::htmlResetRequest		($id,			$sendToBrowser);	break;
-		case self::ACTION_ACCOUNT:		$html = self::htmlAccountForm		($id, false, false,	$sendToBrowser);	break;
-		case self::ACTION_ACCOUNTWIZARD:	$html = self::htmlAccountForm		($id, false, true,	$sendToBrowser);	break;
-		case self::ACTION_STATUSTEXT:		$html = self::statusText		((int) $id, '',		$sendToBrowser);	break;
-		case self::ACTION_RESULTTEXT:		$html = self::resultText		((int) $id, '',		$sendToBrowser);	break;
-		case self::ACTION_RESULTFORM:		$html = self::htmlResultForm		((int) $id, '',		$sendToBrowser);	break;
-		case self::ACTION_RESEND:		$html = self::verify_renotify		($id,			$sendToBrowser);	break;
-		case self::ACTION_JAVASCRIPT:		$html = self::htmlJavascript		($id,			$sendToBrowser);	break;
-		case self::ACTION_VERIFY:		self::verify				($id);						break;
-		case self::ACTION_RESETPASSWORD:	self::passwordReset_validate		($id);						break;
-		case self::ACTION_RESET:		self::passwordReset_reset		($id);						break;
-		case self::ACTION_SIGNOUT:		self::signOut				();						break;
-		default:				self::fatalError			(self::RESULT_UNKNOWNACTION, $action);		break;
+		case self::ACTION_CONTROLPANEL:		$html		= self::htmlControlPanel	($sendToBrowser);				break;
+		case self::ACTION_STYLESHEET:		$html[0]	= self::htmlStyleSheet		($sendToBrowser);				break;
+		case self::ACTION_BODY:			$html[0]	= self::htmlSecureContent	($sendToBrowser);				break;
+		case self::ACTION_ABOUT:		$html[0]	= self::htmlAbout		($sendToBrowser);				break;
+		case self::ACTION_ABOUTTEXT:		$html[0]	= self::htmlAboutText		($sendToBrowser);				break;
+		case self::ACTION_SIGNINFORM:		$html		= self::htmlSignInForm		($sendToBrowser);				break;
+		case self::ACTION_SOURCECODE:		$html[0]	= self::htmlSourceCode		($sendToBrowser);				break;
+		case self::ACTION_CONTAINER:		$html[0]	= self::htmlContainer		($id,			$sendToBrowser);	break;
+		case self::ACTION_BITMAP:		$html[0]	= self::inlineBitmap		($id,			$sendToBrowser);	break;
+		case self::ACTION_RESETREQUEST:		$html		= self::htmlResetRequest	($id,			$sendToBrowser);	break;
+		case self::ACTION_ACCOUNT:		$html		= self::htmlAccountForm		($id, false, false,	$sendToBrowser);	break;
+		case self::ACTION_ACCOUNTWIZARD:	$html		= self::htmlAccountForm		($id, false, true,	$sendToBrowser);	break;
+		case self::ACTION_STATUSTEXT:		$html[0]	= self::statusText		((int) $id, '',		$sendToBrowser);	break;
+		case self::ACTION_RESULTTEXT:		$html[0]	= self::resultText		((int) $id, '',		$sendToBrowser);	break;
+		case self::ACTION_RESULTFORM:		$html		= self::htmlResultForm		((int) $id, '',		$sendToBrowser);	break;
+		case self::ACTION_RESEND:		$html[0]	= self::verify_renotify		($id,			$sendToBrowser);	break;
+		case self::ACTION_JAVASCRIPT:		$html[0]	= self::htmlJavascript		($id,			$sendToBrowser);	break;
+		case self::ACTION_VERIFY:		self::verify					($id);						break;
+		case self::ACTION_RESETPASSWORD:	self::passwordReset_validate			($id);						break;
+		case self::ACTION_RESET:		self::passwordReset_reset			($id);						break;
+		case self::ACTION_SIGNOUT:		self::signOut					();						break;
+		default:				self::fatalError				(self::RESULT_UNKNOWNACTION, $action);		break;
 		}
 
 		return $html;
@@ -5183,7 +5580,7 @@ HTML;
  * Each space-delimited element in the <kbd>action</kbd> member of the {@link $actions}
  * array will be performed.
  *
- * @param array $actions Same format as {@link http://www.php.net/$_GET $_GET} (which is where it usually comes from)
+ * @param array[string]string $actions Same format as {@link http://www.php.net/$_GET $_GET} (which is where it usually comes from)
  */
 	public static /*.void.*/ function doActions(/*.array[string]string.*/ $actions) {
 		// Translate from short form (ezuser.php?foo=bar) to extended form (ezuser.php?action=foo&id=bar)
@@ -5197,8 +5594,8 @@ HTML;
 
 		if (strpos($actionList, self::DELIMITER_SPACE) !== false) {
 			$actionItems	= explode(self::DELIMITER_SPACE, $actionList);
-			$content	= /*.(array[string]string).*/ array();
-			foreach ($actionItems as $action) $content[self::getInstanceId($action)] = self::doAction($action, $id, false);
+			$content	= /*.(array[int][int]string).*/ array();
+			foreach ($actionItems as $action) $content[] = self::doAction($action, $id, false);
 			self::sendXML($content);
 		} else {
 			self::doAction($actionList, $id);
@@ -5216,9 +5613,9 @@ HTML;
 //	public static /*.void.*/ function getResultDescription	(/*.int.*/ $result, $more = '')			{self::resultDescription($result, $more,		true);}
 	public static /*.void.*/ function getResultForm		(/*.int.*/ $result, $more = '')			{self::htmlResultForm($result, $more,			true);}
 	public static /*.void.*/ function getAccountForm	($mode = '', $newUser = false, $wizard = false)	{self::htmlAccountForm($mode, $newUser, $wizard,	true);}
-//-	public static /*.void.*/ function getControlPanelAuthenticated ()					{self::htmlControlPanelAuthenticated(			true);}
 //	public static /*.void.*/ function getSignInForm		()						{self::htmlSignInForm(					true);}
-	public static /*.void.*/ function getControlPanel	($username = '')				{self::htmlControlPanel($username,			true);}
+	public static /*.void.*/ function getSignInResults	()						{self::htmlSignInResults(				true);}
+//	public static /*.void.*/ function getControlPanel	()						{self::htmlControlPanel(				true);}
 //	public static /*.void.*/ function getStyleSheet		()						{self::htmlStyleSheet(					true);}
 //	public static /*.void.*/ function getJavascript		($containerList = '')				{self::htmlJavascript($containerList,			true);}
 	public static /*.void.*/ function getContainer		($action = self::ACTION_CONTROLPANEL)		{self::htmlContainer($action,				true);}
@@ -5236,8 +5633,8 @@ if (basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__)) {
 	if (is_array($_POST) && array_key_exists(ezUser::ACTION, $_POST)) {
 		switch ((string) $_POST[ezUser::ACTION]) {
 		case ezUser::ACTION_SIGNIN:
-			ezUser::signIn($_POST);
-			ezUser::getControlPanel();
+			ezUser::signIn(cast('array[string]string', $_POST));
+			ezUser::getSignInResults();
 			break;
 		case ezUser::ACTION_VALIDATE:
 			ezUser::save($_POST);
@@ -5248,7 +5645,7 @@ if (basename($_SERVER['SCRIPT_NAME']) === basename(__FILE__)) {
 			break;
 		}
 	} else if (is_array($_GET) && (count($_GET) > 0)) {
-		ezUser::doActions(/*.(array[string]string).*/ $_GET);
+		ezUser::doActions(cast('array[string]string', $_GET));
 	} else {
 		ezUser::getAbout(); // Nothing useful in $_GET or $_POST, so give a friendly greeting
 	}
